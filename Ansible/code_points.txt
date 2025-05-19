@@ -1,0 +1,67 @@
+pan_os_logs.yml ❌
+
+command syntax parse error
+--------------------------------------------------------------------------------------------------------------------
+pan_os_secpol.yml ✔️
+
+hip-profiles error - requires re-configuring
+https://www.reddit.com/r/paloaltonetworks/comments/u6mt7e/hipprofiles_any_not_recognized_after_upgrade_to/
+--------------------------------------------------------------------------------------------------------------------
+get_content_versions.yml ✔️
+output -
+
+public-ip-address": "unknown",
+                    "relicense": "0",
+                    "serial": "007951000652878",
+                    "sw-version": "11.1.0",
+                    "threat-version": "0",
+                    "time": "Fri May 16 02:46:14 2025",
+                    "uptime": "3 days, 4:59:26",
+                    "url-db": "paloaltonetworks",
+                    "url-filtering-version": "20250516.20147",
+                    "vm-cap-tier": "T1-8GB",
+                    "vm-cores": "8",
+                    "vm-cpuid": "ESX:F1060400FFFB8B1F",
+                    "vm-license": "VM-SERIES-8",
+                    "vm-mac-base": "7C:89:C3:00:38:f1",
+                    "vm-mac-count": "256",
+                    "vm-mem": "8157120",
+                    "vm-mode": "VMware ESXi",
+                    "vm-uuid": "564D3A90-249D-1193-4181-949A55139E93",
+                    "vpn-disable-mode": "off",
+                    "wf-private-release-date": "unknown",
+                    "wf-private-version": "0",
+                    "wildfire-rt": "Disabled",
+                    "wildfire-version": "0"
+------------------------------------------------------------------------------------------------------------------------
+pan_os_upgrade.yml ⚠️
+output -
+
+TASK [Get HA state of firewall 1] **************************************************************************************************************************************
+[DEPRECATION WARNING]: Classic provider params are deprecated; use "provider" instead. This feature will be removed in version 2.12. Deprecation warnings can be 
+disabled by setting deprecation_warnings=False in ansible.cfg.
+changed: [localhost]
+
+TASK [Parse HA state of firewall 1] ************************************************************************************************************************************
+ok: [localhost]
+
+TASK [Set active and passive firewall facts] ***************************************************************************************************************************
+ok: [localhost]
+
+TASK [Download PAN-OS image on passive firewall] ***********************************************************************************************************************
+changed: [localhost]
+
+TASK [Install PAN-OS image on passive firewall] ************************************************************************************************************************
+changed: [localhost]
+
+TASK [Reboot passive firewall] *****************************************************************************************************************************************
+changed: [localhost]
+
+TASK [Wait for passive firewall to come back online] *******************************************************************************************************************
+ok: [localhost]
+
+TASK [Reconfirm HA status of passive firewall] *************************************************************************************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Failed connection: URLError: code: 502 reason: Bad Gateway"}
+
+PLAY RECAP *************************************************************************************************************************************************************
+localhost                  : ok=7    changed=4    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0 

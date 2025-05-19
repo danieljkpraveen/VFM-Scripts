@@ -1,0 +1,25 @@
+---
+- name: Fetch logs from Palo Alto Firewall
+  hosts: localhost
+  gather_facts: no
+  collections:
+    - paloaltonetworks.panos
+  vars:
+    ip_address: "192.168.29.55"
+    username: "admin"
+    password: "P@ssw0rd"
+    command: "show system info"
+
+  tasks:
+    - name: Execute operational command to fetch logs
+      panos_op:
+        ip_address: "{{ ip_address }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        cmd: "{{ command }}"
+      register: result
+
+    - name: Show fetched logs
+      debug:
+        var: result
+  connection: local  # Use 'local' since we are running locally

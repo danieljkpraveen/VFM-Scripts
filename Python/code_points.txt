@@ -1,0 +1,46 @@
+panOS_logs.py ❌
+
+invalid syntax error for command
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+panOS_secpol.py ✔️
+Output -
+
+Connecting to the firewall...
+Enter rule name: AllowSSH
+Enter source zone: any
+Enter destination zone: any
+Enter source IP (or 'any'): any
+Enter destination IP (or 'any'): any
+Enter application (or 'any'): ssh
+Enter service (or 'application-default' or 'any'): application-default
+Enter action (allow/deny/drop): allow
+✅ Rule 'AllowSSH' created successfully.
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+content_updates.py ✔️
+Output -
+
+Connecting to firewall...
+
+Installed Content Versions:
+Threat Prevention: 0
+URL Filtering: 20250516.20142
+Antivirus: Not Installed / Unknown
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+panOS_logs_netmiko.py ✔️
+Output - 
+
+2025/05/16 02:24:37 info     url-filtering                    upgrade-url-databas       0  PAN-DB was upgraded to version 20250516.20142.
+2025/05/16 02:25:13 info     auth                             auth-success              0  authenticated for user 'admin'.   From: 192.168.29.56.
+2025/05/16 02:25:14 info     general                          general                   0  User admin logged in via CLI from 192.168.29.56
+2025/05/16 02:25:37 info     general                          general                   0  User admin logged out via CLI from 192.168.29.56
+2025/05/16 02:26:33 info     auth                             auth-success              0  authenticated for user 'admin'.   From: 192.168.29.56.
+2025/05/16 02:26:34 info     general                          general                   0  User admin logged in via CLI from 192.168.29.56
+2025/05/16 02:26:58 info     general                          general                   0  User admin logged out via CLI from 192.168.29.56
+2025/05/16 02:28:24 info     auth                             auth-success              0  authenticated for user 'admin'.   From: 192.168.29.56.
+2025/05/16 02:28:25 info     general                          general                   0  User admin logged in via CLI from 192.168.29.56
+2025/05/16 02:28:54 info     general                          general                   0  User admin logged out via CLI from 192.168.29.56
+2025/05/16 02:29:05 medium   general                          general                   0  MLAV: Authentication or Client Certificate failure.
+2025/05/16 02:29:21 info     auth                             auth-success              0  authenticated for user 'admin'.   From: 192.168.29.56.
+2025/05/16 02:29:22 info     general                          general                   0  User admin logged in via CLI from 192.168.29.56
+2025/05/16 02:29:38 info     url-filtering                    upgrade-url-databas       0  PAN-DB was upgraded to version 20250516.20143.
+-----------------------------------------------------------------------------------------------------------------------------------------------------

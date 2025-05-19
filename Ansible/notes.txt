@@ -1,0 +1,37 @@
+Ansible basics -
+- Control Node: The machine where Ansible is installed and from which automation commands are run.
+  It manages the automation tasks and communicates with the managed nodes.
+
+- Managed Node: The remote machine (or group of machines) that Ansible manages.
+  These nodes are the ones on which tasks are executed, and they don’t need Ansible installed,
+  as Ansible uses SSH or WinRM to communicate with them.
+
+- Playbook: A YAML file that contains a list of "plays." Playbooks define the tasks that need to be
+  executed on the managed nodes and provide an organized way to describe automation processes.
+
+- Play: A single unit of work in a playbook. It is a mapping between a group of managed nodes and a
+  series of tasks. A play describes which nodes should be targeted and what actions to perform on them.
+
+- Task: A specific action or command that is performed on the managed nodes. Tasks are the smallest
+  unit of work in a play, and they use Ansible modules to accomplish their goals, like installing
+  packages or configuring settings.
+
+
+gather_facts attribute : collects information about target device when 
+executing a play and this information can be used later. It can be toggled off.
+
+
+
+
+To install ansible requirements file :
+- ansible-galaxy collection install -r requirements.yml
+
+Log types :
+- "traffic", "threat", "url", "wildfire", "data",
+  "config", "system", "hipmatch", "gpc", "iptag",
+  "tunnel", "alarm", "auth", "user-id", "decryption", "unified"
+
+
+
+
+

@@ -1,0 +1,37 @@
+High Availability is a crucial feature that allows you to group two identical Palo Alto Networks firewalls together
+in a redundant pair. 
+
+built in modules
+
+- wait_for (ansible built in : https://docs.ansible.com/ansible/latest/collections/ansible/builtin/wait_for_module.html)
+The wait_for module in Ansible is used to pause and wait for a specific condition to be true before continuing.
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+
+Ansible collection information - paloaltonetworks.panos
+
+panos_software - (https://paloaltonetworks.github.io/pan-os-ansible/modules/panos_software_module.html)
+- panos_software module uses the pan-so-python SDK under the hood.
+- The SDK's updater.py code has the logic for making upgrades.
+- It connects to the firewall and sends direct xml commands to perform the operation.
+- Once firewall receives download command it reaches out to paloalto networks.
+- It downloads the specified version direct from paloalto servers.
+- The module also uses the now obsolete pandevice SDK as backup.
+- If the upgrade fails for some reason using the latest SDK it falls back to the old SDK.
+- If the ansible collection version is old the latest SDK might fail.
+
+panos_active_in_ha - (https://paloaltonetworks.github.io/pan-os-ansible/modules/panos_active_in_ha_module.html)
+- This module uses the panos-upgrade-assurance(PUA) library library under the hood.
+- The library(PUA) runs the check_is_ha_active() which in turn calls check_ha_status().
+- check_ha_status() calls the get_ha_configuration(), and the get_ha_configuration() runs xml cmd to get information.
+
+panos_op - (https://paloaltonetworks.github.io/pan-os-ansible/modules/panos_op_module.html)
+- This module relies on both the new or old SDK, both SDK have op()
+- op() connects to firewall, sends api requests(cmd) and receives responses(output).
+
+panos_security_rule - (https://paloaltonetworks.github.io/pan-os-ansible/modules/panos_security_rule_module.html)
+- This module relies on the python SDK, specifically panos.policies.SecurityRule class.
+- SecurityRule sends data(rule info) to the firewalls and calls the create() method.
+- create() sends the api call to the firewall to use the data and create a rule.
