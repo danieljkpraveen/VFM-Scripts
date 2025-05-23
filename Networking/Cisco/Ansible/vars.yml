@@ -1,0 +1,10 @@
+---
+fmc_host: "https://fmc.example.com"
+fmc_username: "api-admin"
+fmc_password: "securePassword"
+policy_name: "Ansible-SSH-Policy"
+source_network: "192.168.1.0/24"
+device_name: "your-device-name"
+log_type: "SYSTEM"
+max_logs: 100
+upgrade_version: "7.0.2-12"   # target FTD version to upgrade to

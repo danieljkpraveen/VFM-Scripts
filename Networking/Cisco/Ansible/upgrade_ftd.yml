@@ -1,0 +1,59 @@
+- name: Upgrade FTD Version on FMC-managed device
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Authenticate and Get Token
+      uri:
+        url: "{{ fmc_host }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        return_content: yes
+        status_code: 204
+      register: auth_response
+
+    - name: Set Auth Token and Domain UUID
+      set_fact:
+        auth_token: "{{ auth_response.x_auth_access_token }}"
+        domain_uuid: "{{ auth_response.x_auth_domain_uuid }}"
+
+    - name: Get Devices to Find Device ID
+      uri:
+        url: "{{ fmc_host }}/api/fmc_config/v1/domain/{{ domain_uuid }}/devices/devicerecords"
+        method: GET
+        headers:
+          X-auth-access-token: "{{ auth_token }}"
+        return_content: yes
+      register: device_list
+
+    - name: Set Device ID Based on Name
+      set_fact:
+        device_id: "{{ item.id }}"
+      loop: "{{ device_list.json.items }}"
+      when: item.name == device_name
+
+    - name: Trigger FTD Upgrade Job
+      uri:
+        url: "{{ fmc_host }}/api/fmc_config/v1/domain/{{ domain_uuid }}/devices/upgraderequests"
+        method: POST
+        headers:
+          X-auth-access-token: "{{ auth_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          deviceId: "{{ device_id }}"
+          version: "{{ upgrade_version }}"
+          ignoreWarning: true
+          forceUpgrade: true
+        status_code: 202
+      register: upgrade_response
+
+    - name: Show Upgrade Job Response
+      debug:
+        var: upgrade_response.json

@@ -1,0 +1,111 @@
+- name: Configure FMC to Allow SSH and Deploy Policy
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - vars.yml
+
+  tasks:
+    # same tasks as before, just remove the vars section since it’s loaded from vars.yml
+    - name: Authenticate and Get Token
+      uri:
+        url: "{{ fmc_host }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        return_content: yes
+        status_code: 204
+      register: auth_response
+
+    - name: Set Auth Token and Domain UUID
+      set_fact:
+        auth_token: "{{ auth_response.x_auth_access_token }}"
+        domain_uuid: "{{ auth_response.x_auth_domain_uuid }}"
+
+    - name: Create Network Object
+      cisco.fmcansible.fmc_configuration:
+        operation: createMultipleNetworkObject
+        data:
+          name: "Source_Network"
+          value: "{{ source_network }}"
+          type: "Network"
+        path_params:
+          domainUUID: "{{ domain_uuid }}"
+        register_as: source_network_obj
+
+    - name: Create SSH Port Object
+      cisco.fmcansible.fmc_configuration:
+        operation: createMultipleProtocolPortObject
+        data:
+          name: "SSH_Port"
+          port: "22"
+          protocol: "TCP"
+          type: "ProtocolPortObject"
+        path_params:
+          domainUUID: "{{ domain_uuid }}"
+        register_as: ssh_port_obj
+
+    - name: Create Access Control Policy
+      cisco.fmcansible.fmc_configuration:
+        operation: createAccessPolicy
+        data:
+          name: "{{ policy_name }}"
+          defaultAction:
+            action: BLOCK
+        path_params:
+          domainUUID: "{{ domain_uuid }}"
+        register_as: access_policy_obj
+
+    - name: Create Access Rule to Allow SSH
+      cisco.fmcansible.fmc_configuration:
+        operation: createAccessRule
+        data:
+          name: "Allow_SSH"
+          action: "ALLOW"
+          enabled: true
+          sourceNetworks:
+            objects:
+              - id: "{{ source_network_obj.id }}"
+                type: "Network"
+          destinationPorts:
+            objects:
+              - id: "{{ ssh_port_obj.id }}"
+                type: "ProtocolPortObject"
+          logBegin: true
+          logEnd: true
+        path_params:
+          domainUUID: "{{ domain_uuid }}"
+          policyId: "{{ access_policy_obj.id }}"
+
+    - name: Get Devices to Find Device ID
+      uri:
+        url: "{{ fmc_host }}/api/fmc_config/v1/domain/{{ domain_uuid }}/devices/devicerecords"
+        method: GET
+        headers:
+          X-auth-access-token: "{{ auth_token }}"
+        return_content: yes
+      register: device_list
+
+    - name: Set Device ID Based on Name
+      set_fact:
+        device_id: "{{ item.id }}"
+      loop: "{{ device_list.json.items }}"
+      when: item.name == device_name
+
+    - name: Deploy Access Policy to Device
+      uri:
+        url: "{{ fmc_host }}/api/fmc_config/v1/domain/{{ domain_uuid }}/deployment/deploymentrequests"
+        method: POST
+        headers:
+          X-auth-access-token: "{{ auth_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          type: "DeploymentRequest"
+          forceDeploy: true
+          ignoreWarning: true
+          deviceList:
+            - id: "{{ device_id }}"
+        status_code: 202

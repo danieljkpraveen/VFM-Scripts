@@ -1,0 +1,45 @@
+- name: Fetch FMC System Logs
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Authenticate and Get Token
+      uri:
+        url: "{{ fmc_host }}/api/fmc_platform/v1/auth/generatetoken"
+        method: POST
+        user: "{{ fmc_username }}"
+        password: "{{ fmc_password }}"
+        force_basic_auth: yes
+        return_content: yes
+        status_code: 204
+      register: auth_response
+
+    - name: Set Auth Token and Domain UUID
+      set_fact:
+        auth_token: "{{ auth_response.x_auth_access_token }}"
+        domain_uuid: "{{ auth_response.x_auth_domain_uuid }}"
+
+    - name: Fetch FMC Logs
+      uri:
+        url: "{{ fmc_host }}/api/fmc_monitoring/v1/domain/{{ domain_uuid }}/logs/{{ log_type | lower }}"
+        method: GET
+        headers:
+          X-auth-access-token: "{{ auth_token }}"
+        return_content: yes
+        status_code: 200
+        params:
+          limit: "{{ max_logs }}"
+      register: logs_response
+
+    - name: Show logs summary
+      debug:
+        msg: "Fetched {{ logs_response.json.paging.count }} {{ log_type }} log entries."
+
+    - name: Save logs to file
+      copy:
+        content: "{{ logs_response.content }}"
+        dest: "./fmc_{{ log_type | lower }}_logs.json"
