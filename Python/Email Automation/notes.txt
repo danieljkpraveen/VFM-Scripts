@@ -1,0 +1,14 @@
+Summary: Why O365 (or similar libraries) is mandatory for extracting spreadsheets from MS365 email
+
+- Microsoft 365 (MS365/Outlook) uses modern authentication (OAuth2) for mailbox access, which is not supported by the Python standard library.
+- The standard library's email protocols (IMAP/POP3/SMTP) do not support OAuth2 authentication, and basic authentication is disabled or deprecated for MS365 accounts.
+- O365 and similar libraries handle OAuth2 authentication, token management, and provide convenient APIs for accessing mailboxes and downloading attachments.
+
+What is required to implement with only base Python:
+- You must have the raw email file (e.g., .eml) already downloaded by some other means.
+- With base Python, you can parse the .eml file and extract attachments using the `email` module.
+- However, you cannot connect to MS365/Outlook and fetch emails programmatically with only the standard library due to authentication limitations.
+
+Conclusion:
+- O365 or a similar library is mandatory for direct programmatic access to MS365 mailboxes.
+- Base Python alone is only sufficient if you already have the email file saved locally.
