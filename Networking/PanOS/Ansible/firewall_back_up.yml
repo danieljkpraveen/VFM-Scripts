@@ -1,0 +1,32 @@
+---
+- name: Backup PAN-OS Firewall Configuration
+  hosts: localhost
+  gather_facts: no
+  collections:
+    - paloaltonetworks.panos
+
+  vars:
+    firewall_ip: "192.168.29.55"      # Set your firewall's management IP
+    firewall_username: "admin"    # Set your firewall username
+    firewall_password: "p@ssw0rd" # Set your firewall password
+    backup_file_on_device: "backup.xml"
+    backup_path: "./panos_config_backup.xml"
+
+  tasks:
+    - name: Save running-config to backup.xml on device
+      paloaltonetworks.panos.panos_op:
+        ip_address: "{{ firewall_ip }}"
+        username: "{{ firewall_username }}"
+        password: "{{ firewall_password }}"
+        cmd: "save config to {{ backup_file_on_device }}"
+        validate_certs: false
+
+    - name: Export backup.xml from device
+      paloaltonetworks.panos.panos_export:
+        ip_address: "{{ firewall_ip }}"
+        username: "{{ firewall_username }}"
+        password: "{{ firewall_password }}"
+        category: "configuration"
+        filename: "{{ backup_file_on_device }}"
+        file: "{{ backup_path }}"
+        validate_certs: false
