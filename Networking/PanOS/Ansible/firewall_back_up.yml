@@ -19,7 +19,6 @@
         username: "{{ firewall_username }}"
         password: "{{ firewall_password }}"
         cmd: "save config to {{ backup_file_on_device }}"
-        validate_certs: false
 
     - name: Export backup.xml from device
       paloaltonetworks.panos.panos_export:
@@ -30,3 +29,4 @@
         filename: "{{ backup_file_on_device }}"
         file: "{{ backup_path }}"
         validate_certs: false
+  connection: local
