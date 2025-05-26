@@ -8,7 +8,7 @@
     ip_address: "192.168.29.55"
     username: "admin"
     password: "P@ssw0rd"
-    command: "show system info"
+    command: "show log system"
 
   tasks:
     - name: Execute operational command to fetch logs
