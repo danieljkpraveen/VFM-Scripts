@@ -1,10 +1,9 @@
 import os
 import re
 import sys
-# from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import io
 import xlsxwriter
-from CommonServerPython import *  # noqa: F403
 
 
 def read_stdin():
@@ -12,59 +11,78 @@ def read_stdin():
     return sys.stdin.read()
 
 
-# def is_html(text):
-#     return bool(BeautifulSoup(text, "html.parser").find())
+def is_html(text):
+    return bool(BeautifulSoup(text, "html.parser").find())
 
 
 def extract_rules(text):
-    """Extract rules and their values from the input."""
-    pattern = r'(Rules where .*?=)\[(.*?)\]'
-    matches = re.findall(pattern, text, re.DOTALL)
+    """
+    Extract rules and their values from the input.
+    Handles:
+      - Rules ... =["...", "..."]
+      - Rules ... - ["...", "..."]
+      - Rules ... - ... (plain text)
+      - Rules ... . ... (plain text)
+    """
+    # Pattern for rules with a list of values in brackets
+    pattern_list = r'(Rules.*?)(?:=|-)\s*\[(.*?)\]'
+    # Pattern for rules with a single value after dash or period
+    pattern_single = r'(Rules.*?)(?:-|\.)(?!\s*\[)(.*?)(?=(?:Rules|$))'
+
     extracted = []
-    for rule_desc, values in matches:
-        task = rule_desc.strip().rstrip('=').strip()
+
+    # First, extract all rules with lists
+    for match in re.finditer(pattern_list, text, re.DOTALL):
+        rule_desc = match.group(1).strip().rstrip('= -').strip()
+        values = match.group(2)
         result = ', '.join([v.strip().strip('"').strip("'")
                            for v in values.split(',')])
-        extracted.append([task, result])
+        extracted.append([rule_desc, result])
+
+    # Remove already matched parts to avoid duplicates
+    text_cleaned = re.sub(pattern_list, '', text, flags=re.DOTALL)
+
+    # Now extract single-value rules (not followed by [ ... ])
+    for match in re.finditer(pattern_single, text_cleaned, re.DOTALL):
+        rule_desc = match.group(1).strip().rstrip('= -').strip()
+        value = match.group(2).strip().strip('.').strip()
+        if value:  # Only add if value is not empty
+            extracted.append([rule_desc, value])
+
     return extracted
 
 
-def html_to_text(html):
+def extract_interface_table_from_html(html):
+    """Extracts interface table from Cisco CLI HTML output."""
     soup = BeautifulSoup(html, "html.parser")
-    return soup.get_text(separator="\n")
+    cli_div = soup.find("div", class_="cli-output")
+    if not cli_div:
+        return [], []
 
+    lines = cli_div.get_text(separator="\n").splitlines()
+    table_start = None
+    for idx, line in enumerate(lines):
+        if line.strip().startswith("Interface"):
+            table_start = idx
+            break
+    if table_start is None:
+        return [], []
 
-# def extract_interface_table_from_html(html):
-#     """Extracts interface table from Cisco CLI HTML output."""
-#     soup = BeautifulSoup(html, "html.parser")
-#     cli_div = soup.find("div", class_="cli-output")
-#     if not cli_div:
-#         return [], []
-
-#     lines = cli_div.get_text(separator="\n").splitlines()
-#     table_start = None
-#     for idx, line in enumerate(lines):
-#         if line.strip().startswith("Interface"):
-#             table_start = idx
-#             break
-#     if table_start is None:
-#         return [], []
-
-#     headers = ["Interface", "IP-Address", "Method", "Status", "Protocol"]
-#     data = []
-#     for line in lines[table_start+1:]:
-#         if not line.strip():
-#             continue
-#         parts = [p for p in line.replace('\xa0', ' ').split(' ') if p]
-#         if len(parts) < 6:
-#             continue
-#         interface = parts[0]
-#         ip_addr = parts[1]
-#         method = parts[3]
-#         status = parts[4]
-#         protocol = parts[5]
-#         data.append([interface, ip_addr, method, status, protocol])
-#     return headers, data
+    headers = ["Interface", "IP-Address", "Method", "Status", "Protocol"]
+    data = []
+    for line in lines[table_start+1:]:
+        if not line.strip():
+            continue
+        parts = [p for p in line.replace('\xa0', ' ').split(' ') if p]
+        if len(parts) < 6:
+            continue
+        interface = parts[0]
+        ip_addr = parts[1]
+        method = parts[3]
+        status = parts[4]
+        protocol = parts[5]
+        data.append([interface, ip_addr, method, status, protocol])
+    return headers, data
 
 
 def create_text_excel(data, filename):
@@ -106,104 +124,110 @@ def create_text_excel(data, filename):
 
     workbook.close()
     output.seek(0)
-    return fileResult(filename, output.read())
+
+    with open(filename, 'wb') as f:
+        f.write(output.read())
+    print(f"[Local Dev] Saved file: {filename}")
 
 
-# def create_html_excel(data, headers, filename):
-#     """Excel generation for HTML-extracted interface tables with row coloring and auto-fit columns."""
-#     output = io.BytesIO()
-#     workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-#     worksheet = workbook.add_worksheet()
+def create_html_excel(data, headers, filename):
+    """Excel generation for HTML-extracted interface tables with row coloring and auto-fit columns."""
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet()
 
-#     bold = workbook.add_format({'bold': True})
-#     green_fill = workbook.add_format(
-#         {'bg_color': '#C6EFCE', 'font_color': '#000000'})
-#     red_fill = workbook.add_format(
-#         {'bg_color': '#FFC7CE', 'font_color': '#000000'})
-#     normal = workbook.add_format({'font_color': '#000000'})
+    bold = workbook.add_format({'bold': True})
+    green_fill = workbook.add_format(
+        {'bg_color': '#C6EFCE', 'font_color': '#000000'})
+    red_fill = workbook.add_format(
+        {'bg_color': '#FFC7CE', 'font_color': '#000000'})
+    normal = workbook.add_format({'font_color': '#000000'})
 
-#     # Combine headers and data for width calculation
-#     all_rows = [headers] + data
+    # Combine headers and data for width calculation
+    all_rows = [headers] + data
 
-#     # Calculate max width for each column
-#     col_widths = [0] * len(headers)
-#     for row in all_rows:
-#         for col, cell in enumerate(row):
-#             cell_len = len(str(cell))
-#             if cell_len > col_widths[col]:
-#                 col_widths[col] = cell_len
+    # Calculate max width for each column
+    col_widths = [0] * len(headers)
+    for row in all_rows:
+        for col, cell in enumerate(row):
+            cell_len = len(str(cell))
+            if cell_len > col_widths[col]:
+                col_widths[col] = cell_len
 
-#     # Add some padding for readability
-#     col_widths = [w + 2 for w in col_widths]
+    # Add some padding for readability
+    col_widths = [w + 2 for w in col_widths]
 
-#     # Set column widths
-#     for col, width in enumerate(col_widths):
-#         worksheet.set_column(col, col, width)
+    # Set column widths
+    for col, width in enumerate(col_widths):
+        worksheet.set_column(col, col, width)
 
-#     # Write headers
-#     for col, header in enumerate(headers):
-#         worksheet.write(0, col, header, bold)
+    # Write headers
+    for col, header in enumerate(headers):
+        worksheet.write(0, col, header, bold)
 
-#     # Find the index of the "Status" column
-#     try:
-#         status_idx = headers.index('Status')
-#     except ValueError:
-#         status_idx = -1
+    # Find the index of the "Status" column
+    try:
+        status_idx = headers.index('Status')
+    except ValueError:
+        status_idx = -1
 
-#     # Write data with row-based conditional formatting
-#     for row_num, row_data in enumerate(data, start=1):
-#         row_format = normal
-#         if status_idx != -1:
-#             status_value = str(row_data[status_idx]).lower()
-#             if status_value == 'up':
-#                 row_format = green_fill
-#             elif status_value == 'down':
-#                 row_format = red_fill
-#         for col, value in enumerate(row_data):
-#             worksheet.write(row_num, col, value, row_format)
+    # Write data with row-based conditional formatting
+    for row_num, row_data in enumerate(data, start=1):
+        row_format = normal
+        if status_idx != -1:
+            status_value = str(row_data[status_idx]).lower()
+            if status_value == 'up':
+                row_format = green_fill
+            elif status_value == 'down':
+                row_format = red_fill
+        for col, value in enumerate(row_data):
+            worksheet.write(row_num, col, value, row_format)
 
-#     workbook.close()
-#     output.seek(0)
-#     return fileResult(filename, output.read())
+    workbook.close()
+    output.seek(0)
+
+    with open(filename, 'wb') as f:
+        f.write(output.read())
+    print(f"[Local Dev] Saved file: {filename}")
 
 
 def get_downloads_folder():
     """Return the user's Downloads folder path in a cross-platform way."""
     if os.name == 'nt':
-        # Windows
         return os.path.join(os.environ['USERPROFILE'], 'Downloads')
     else:
-        # Linux/Mac
         return os.path.join(os.path.expanduser('~'), 'Downloads')
 
 
 def main():
     try:
-        input_text = demisto.args().get('input')
+        input_text = read_stdin()
         if not input_text:
-            return_error("No input provided.")
+            print("No input provided.")
 
         downloads_folder = get_downloads_folder()
+        os.makedirs(downloads_folder, exist_ok=True)
 
-        # if is_html(input_text):
-        #     data = extract_interface_table_from_html(input_text)
-        #     if data:
-        #         headers = ["Interface", "IP-Address",
-        #                    "Method", "Status", "Protocol"]
-        #         filename = os.path.join(downloads_folder, "interfaces.xlsx")
-        #         return_results(create_html_excel(data, headers, filename))
-        #     else:
-        #         return_error("No interface table found in HTML.")
-        # else:
-        rules = extract_rules(input_text)
-        if rules:
-            filename = os.path.join(downloads_folder, "rules.xlsx")
-            return_results(create_text_excel(rules, filename))
+        if is_html(input_text):
+            headers, data = extract_interface_table_from_html(input_text)
+            if data:
+                headers = ["Interface", "IP-Address",
+                           "Method", "Status", "Protocol"]
+                filename = os.path.join(downloads_folder, "interfaces.xlsx")
+                # filename = "interfaces.xlsx"
+                create_html_excel(data, headers, filename)
+            else:
+                print("No interface table found in HTML.")
         else:
-            return_error("No rules found in the input.")
-
+            rules = extract_rules(input_text)
+            if rules:
+                filename = os.path.join(downloads_folder, "rules.xlsx")
+                # filename = "rules.xlsx"
+                create_text_excel(rules, filename)
+            else:
+                print("No rules found in the input.")
     except Exception as e:
-        return_error(f"Script failed: {str(e)}")
+        return (f"Script failed: {str(e)}")
 
 
 if __name__ == "__main__":
