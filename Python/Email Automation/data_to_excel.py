@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 from bs4 import BeautifulSoup
@@ -166,25 +167,37 @@ def create_html_excel(data, headers, filename):
     return fileResult(filename, output.read())
 
 
+def get_downloads_folder():
+    """Return the user's Downloads folder path in a cross-platform way."""
+    if os.name == 'nt':
+        # Windows
+        return os.path.join(os.environ['USERPROFILE'], 'Downloads')
+    else:
+        # Linux/Mac
+        return os.path.join(os.path.expanduser('~'), 'Downloads')
+
+
 def main():
     try:
         input_text = demisto.args().get('input')
         if not input_text:
             return_error("No input provided.")
 
+        downloads_folder = get_downloads_folder()
+
         if is_html(input_text):
             data = extract_interface_table_from_html(input_text)
             if data:
                 headers = ["Interface", "IP-Address",
                            "Method", "Status", "Protocol"]
-                filename = "interfaces.xlsx"
+                filename = os.path.join(downloads_folder, "interfaces.xlsx")
                 return_results(create_html_excel(data, headers, filename))
             else:
                 return_error("No interface table found in HTML.")
         else:
             rules = extract_rules(input_text)
             if rules:
-                filename = "rules.xlsx"
+                filename = os.path.join(downloads_folder, "rules.xlsx")
                 return_results(create_text_excel(rules, filename))
             else:
                 return_error("No rules found in the input.")
