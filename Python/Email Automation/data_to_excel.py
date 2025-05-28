@@ -1,9 +1,9 @@
 import re
 import sys
-import pandas as pd
 from bs4 import BeautifulSoup
-import openpyxl
-import datetime
+import io
+import xlsxwriter
+from CommonServerPython import *  # noqa: F403
 
 
 def read_stdin():
@@ -66,88 +66,131 @@ def extract_interface_table_from_html(html):
     return headers, data
 
 
-def text_data_to_excel(data, file_path):
-    """Save plain text extracted data to Excel."""
-    df = pd.DataFrame(data, columns=["Tasks", "Results"])
-    df.to_excel(file_path, index=False)
+def create_text_excel(data, filename):
+    """Excel generation for plain text rules with auto-fit columns."""
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet()
 
-    wb = openpyxl.load_workbook(file_path)
-    ws = wb.active
-    for column_cells in ws.columns:
-        length = max(len(str(cell.value))
-                     if cell.value else 0 for cell in column_cells)
-        ws.column_dimensions[column_cells[0].column_letter].width = length + 2
-    wb.save(file_path)
-    print(f"Data saved to {file_path}")
+    # Centered bold header format
+    bold_center = workbook.add_format(
+        {'bold': True, 'align': 'center', 'valign': 'vcenter'})
+
+    # Prepare headers and combine with data for width calculation
+    headers = ["Tasks", "Results"]
+    all_rows = [headers] + data
+
+    # Calculate max width for each column
+    col_widths = [0, 0]
+    for row in all_rows:
+        for col, cell in enumerate(row):
+            cell_len = len(str(cell))
+            if cell_len > col_widths[col]:
+                col_widths[col] = cell_len
+
+    # Add some padding for readability
+    col_widths = [w + 2 for w in col_widths]
+
+    # Set column widths
+    worksheet.set_column(0, 0, col_widths[0])
+    worksheet.set_column(1, 1, col_widths[1])
+
+    # Write headers
+    worksheet.write(0, 0, headers[0], bold_center)
+    worksheet.write(0, 1, headers[1], bold_center)
+
+    # Write data
+    for i, row in enumerate(data, start=1):
+        worksheet.write_row(i, 0, row)
+
+    workbook.close()
+    output.seek(0)
+    return fileResult(filename, output.read())
 
 
-def html_data_to_excel(data, file_path, headers):
-    """Save HTML extracted interface table to Excel with formatting."""
-    df = pd.DataFrame(data, columns=headers)
-    df.to_excel(file_path, index=False)
+def create_html_excel(data, headers, filename):
+    """Excel generation for HTML-extracted interface tables with row coloring and auto-fit columns."""
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet()
 
-    wb = openpyxl.load_workbook(file_path)
-    ws = wb.active
+    bold = workbook.add_format({'bold': True})
+    green_fill = workbook.add_format(
+        {'bg_color': '#C6EFCE', 'font_color': '#000000'})
+    red_fill = workbook.add_format(
+        {'bg_color': '#FFC7CE', 'font_color': '#000000'})
+    normal = workbook.add_format({'font_color': '#000000'})
 
-    # Bold headers
-    for cell in ws[1]:
-        cell.font = openpyxl.styles.Font(bold=True)
+    # Combine headers and data for width calculation
+    all_rows = [headers] + data
 
-    # Auto-adjust column widths
-    for column_cells in ws.columns:
-        length = max(len(str(cell.value))
-                     if cell.value else 0 for cell in column_cells)
-        ws.column_dimensions[column_cells[0].column_letter].width = length + 2
+    # Calculate max width for each column
+    col_widths = [0] * len(headers)
+    for row in all_rows:
+        for col, cell in enumerate(row):
+            cell_len = len(str(cell))
+            if cell_len > col_widths[col]:
+                col_widths[col] = cell_len
 
-    # Highlight rows based on Status
-    if "Status" in headers:
-        status_col = headers.index("Status") + 1
-        for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
-            status = row[status_col-1].value
-            if status and str(status).lower() == "up":
-                for cell in row:
-                    cell.fill = openpyxl.styles.PatternFill(
-                        start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
-            elif status and str(status).lower() == "down":
-                for cell in row:
-                    cell.fill = openpyxl.styles.PatternFill(
-                        start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+    # Add some padding for readability
+    col_widths = [w + 2 for w in col_widths]
 
-    wb.save(file_path)
-    print(f"Data saved to {file_path}")
+    # Set column widths
+    for col, width in enumerate(col_widths):
+        worksheet.set_column(col, col, width)
+
+    # Write headers
+    for col, header in enumerate(headers):
+        worksheet.write(0, col, header, bold)
+
+    # Find the index of the "Status" column
+    try:
+        status_idx = headers.index('Status')
+    except ValueError:
+        status_idx = -1
+
+    # Write data with row-based conditional formatting
+    for row_num, row_data in enumerate(data, start=1):
+        row_format = normal
+        if status_idx != -1:
+            status_value = str(row_data[status_idx]).lower()
+            if status_value == 'up':
+                row_format = green_fill
+            elif status_value == 'down':
+                row_format = red_fill
+        for col, value in enumerate(row_data):
+            worksheet.write(row_num, col, value, row_format)
+
+    workbook.close()
+    output.seek(0)
+    return fileResult(filename, output.read())
 
 
 def main():
-    # Only read from stdin if data is piped in
-    if sys.stdin.isatty():
-        print(
-            "Error: No input detected. Please pipe data into this script.", file=sys.stderr)
-        sys.exit(1)
-    input_text = sys.stdin.read()
-    if not input_text.strip():
-        print("Error: No input data received.", file=sys.stderr)
-        sys.exit(1)
-    if is_html(input_text):
-        headers, table_data = extract_interface_table_from_html(input_text)
-        if table_data:
-            now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            excel_path = f"interfaces_{now}.xlsx"
-            html_data_to_excel(table_data, excel_path, headers)
-            print(
-                f"Extracted {len(table_data)} interfaces. Data saved to {excel_path}")
-            return
+    try:
+        input_text = demisto.args().get('input')
+        if not input_text:
+            return_error("No input provided.")
+
+        if is_html(input_text):
+            data = extract_interface_table_from_html(input_text)
+            if data:
+                headers = ["Interface", "IP-Address",
+                           "Method", "Status", "Protocol"]
+                filename = "interfaces.xlsx"
+                return_results(create_html_excel(data, headers, filename))
+            else:
+                return_error("No interface table found in HTML.")
         else:
-            print("No interface table found in the HTML input.")
-    else:
-        text = input_text
-        rules = extract_rules(text)
-        if rules:
-            now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            excel_path = f"output_{now}.xlsx"
-            text_data_to_excel(rules, excel_path)
-            print(f"Extracted {len(rules)} rules. Data saved to {excel_path}")
-        else:
-            print("No rules found in the input.")
+            rules = extract_rules(input_text)
+            if rules:
+                filename = "rules.xlsx"
+                return_results(create_text_excel(rules, filename))
+            else:
+                return_error("No rules found in the input.")
+
+    except Exception as e:
+        return_error(f"Script failed: {str(e)}")
 
 
 if __name__ == "__main__":
