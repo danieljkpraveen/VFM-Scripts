@@ -7,7 +7,7 @@ import datetime
 
 
 def read_stdin():
-    print("Paste your plain text or HTML input. Press Ctrl+v to paste then Ctrl+d to finish:")
+    # Read all input from stdin (no prompt)
     return sys.stdin.read()
 
 
@@ -54,12 +54,9 @@ def extract_interface_table_from_html(html):
     for line in lines[table_start+1:]:
         if not line.strip():
             continue
-        # Replace non-breaking spaces and split
         parts = [p for p in line.replace('\xa0', ' ').split(' ') if p]
         if len(parts) < 6:
             continue
-        # Cisco output: Interface, IP-Address, OK?, Method, Status, Protocol
-        # We want: Interface, IP-Address, Method, Status, Protocol
         interface = parts[0]
         ip_addr = parts[1]
         method = parts[3]
@@ -121,9 +118,16 @@ def html_data_to_excel(data, file_path, headers):
 
 
 def main():
-    input_text = read_stdin()
+    # Only read from stdin if data is piped in
+    if sys.stdin.isatty():
+        print(
+            "Error: No input detected. Please pipe data into this script.", file=sys.stderr)
+        sys.exit(1)
+    input_text = sys.stdin.read()
+    if not input_text.strip():
+        print("Error: No input data received.", file=sys.stderr)
+        sys.exit(1)
     if is_html(input_text):
-        print("Detected HTML input.")
         headers, table_data = extract_interface_table_from_html(input_text)
         if table_data:
             now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -135,7 +139,6 @@ def main():
         else:
             print("No interface table found in the HTML input.")
     else:
-        print("Detected plain text input.")
         text = input_text
         rules = extract_rules(text)
         if rules:
