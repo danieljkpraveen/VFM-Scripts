@@ -1,5 +1,6 @@
 import re
 import sys
+import datetime
 from fpdf import FPDF
 from bs4 import BeautifulSoup
 
@@ -88,8 +89,10 @@ def main():
         text = input_text
     rules = extract_rules(text)
     if rules:
-        save_to_pdf_table(rules, "data_output.pdf")
-        print(f"Extracted {len(rules)} rules. Data saved to output.pdf")
+        now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"output_{now}.pdf"
+        save_to_pdf_table(rules, filename)
+        print(f"Extracted {len(rules)} rules. Data saved to {filename}")
     else:
         print("No rules found in the input.")
 
