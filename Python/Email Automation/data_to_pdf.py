@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 
 def read_stdin():
-    print("Paste your plain text or HTML input. Press Ctrl+D (Linux/Mac) or Ctrl+Z (Windows) then Enter to finish:")
+    print("Paste your plain text or HTML input. Press Ctrl+v to paste then Ctrl+d to finish:")
     return sys.stdin.read()
 
 

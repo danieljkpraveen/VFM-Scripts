@@ -1,3 +1,6 @@
+# THIS SCRIPT IS CURRENTLY NOT REQUIRED - LEAVING IT HERE FOR REFERENCE
+
+
 import csv
 import re
 import requests
