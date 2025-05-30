@@ -4,19 +4,45 @@ import re
 
 
 def extract_rules(text):
-    pattern_list = r'(Rules.*?)(?:=|-)\s*\[(.*?)\]'
-    pattern_single = r'(Rules.*?)(?:-|\.)(?!\s*\[)(.*?)(?=(?:Rules|$))'
+    """
+    Extract rules and their values from the input.
+    Handles:
+      - "Rules ..." value="[\"...\",\"...\"]"
+      - Rules ... value=["...", "..."]
+      - Rules ... =["...", "..."]
+      - Rules ... - ["...", "..."]
+      - Rules ... - ... (plain text)
+      - Rules ... . ... (plain text)
+    """
     extracted = []
 
+    pattern_value = r'(?:"([^"]+)"|(\bRules[^\s=:-]+.*?))\s+value\s*=\s*(?:"|\')\[(.*?)\](?:"|\')'
+    pattern_list = r'(Rules.*?)(?:=|-)\s*\[(.*?)\]'
+    pattern_single = r'(Rules.*?)(?:-|\.)(?!\s*\[)(.*?)(?=(?:Rules|$))'
+
+    # First, extract all rules with quoted or unquoted value=
+    for match in re.finditer(pattern_value, text, re.DOTALL):
+        rule_desc = match.group(1) or match.group(2)
+        values = match.group(3).replace('\\', '')
+        result = ', '.join([v.strip().strip('"').strip("'")
+                           for v in values.split(',')])
+        extracted.append([rule_desc.strip(), result])
+
+    # Remove already matched parts to avoid duplicates
+    text = re.sub(pattern_value, '', text, flags=re.DOTALL)
+
+    # Then, extract all rules with lists (excluding value=)
     for match in re.finditer(pattern_list, text, re.DOTALL):
         rule_desc = match.group(1).strip().rstrip('= -').strip()
-        values = match.group(2)
+        values = match.group(2).replace('\\', '')
         result = ', '.join([v.strip().strip('"').strip("'")
                            for v in values.split(',')])
         extracted.append([rule_desc, result])
 
+    # Remove already matched parts to avoid duplicates
     text_cleaned = re.sub(pattern_list, '', text, flags=re.DOTALL)
 
+    # Now extract single-value rules (not followed by [ ... ])
     for match in re.finditer(pattern_single, text_cleaned, re.DOTALL):
         rule_desc = match.group(1).strip().rstrip('= -').strip()
         value = match.group(2).strip().strip('.').strip()
