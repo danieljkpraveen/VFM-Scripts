@@ -19,22 +19,37 @@ def extract_rules(text):
     """
     Extract rules and their values from the input.
     Handles:
+      - "Rules ..." value="[\"...\",\"...\"]"
+      - Rules ... value=["...", "..."]
       - Rules ... =["...", "..."]
       - Rules ... - ["...", "..."]
       - Rules ... - ... (plain text)
       - Rules ... . ... (plain text)
     """
-    # Pattern for rules with a list of values in brackets
-    pattern_list = r'(Rules.*?)(?:=|-)\s*\[(.*?)\]'
-    # Pattern for rules with a single value after dash or period
-    pattern_single = r'(Rules.*?)(?:-|\.)(?!\s*\[)(.*?)(?=(?:Rules|$))'
-
     extracted = []
 
-    # First, extract all rules with lists
+    # Pattern for quoted or unquoted task and value
+    pattern_value = r'(?:"([^"]+)"|(\bRules[^\s=:-]+.*?))\s+value\s*=\s*(?:"|\')\[(.*?)\](?:"|\')'
+    # Pattern for unquoted list after = or -
+    pattern_list = r'(Rules.*?)(?:=|-)\s*\[(.*?)\]'
+    # Pattern for single value after dash or period
+    pattern_single = r'(Rules.*?)(?:-|\.)(?!\s*\[)(.*?)(?=(?:Rules|$))'
+
+    # First, extract all rules with quoted or unquoted value=
+    for match in re.finditer(pattern_value, text, re.DOTALL):
+        rule_desc = match.group(1) or match.group(2)
+        values = match.group(3).replace('\\', '')
+        result = ', '.join([v.strip().strip('"').strip("'")
+                           for v in values.split(',')])
+        extracted.append([rule_desc.strip(), result])
+
+    # Remove already matched parts to avoid duplicates
+    text = re.sub(pattern_value, '', text, flags=re.DOTALL)
+
+    # Then, extract all rules with lists (excluding value=)
     for match in re.finditer(pattern_list, text, re.DOTALL):
         rule_desc = match.group(1).strip().rstrip('= -').strip()
-        values = match.group(2)
+        values = match.group(2).replace('\\', '')
         result = ', '.join([v.strip().strip('"').strip("'")
                            for v in values.split(',')])
         extracted.append([rule_desc, result])
@@ -46,7 +61,7 @@ def extract_rules(text):
     for match in re.finditer(pattern_single, text_cleaned, re.DOTALL):
         rule_desc = match.group(1).strip().rstrip('= -').strip()
         value = match.group(2).strip().strip('.').strip()
-        if value:  # Only add if value is not empty
+        if value:
             extracted.append([rule_desc, value])
 
     return extracted
