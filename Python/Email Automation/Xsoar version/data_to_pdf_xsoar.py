@@ -140,7 +140,7 @@ class MinimalPDF:
         if self.y < self.margin:
             self.add_page()
 
-    def output(self, filename):
+    def output(self):
         if self.current_content:
             self.pages.append(self.current_content)
         # PDF header
@@ -209,17 +209,7 @@ class MinimalPDF:
         # with open(self.filename, "wb") as f:
         #     f.write(pdf)
 
-        file_entry = fileResult(filename, pdf)
-        demisto.results(file_entry)
-
-        # Put EntryID and name in context for playbook/automation chaining
-        return_results(CommandResults(
-            outputs_prefix="ExtractedRulesExcel",
-            outputs={
-                "EntryID": file_entry.get("FileID"),
-                "Name": filename
-            }
-        ))
+        return pdf
 
     def _escape(self, txt):
         return txt.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
@@ -296,7 +286,7 @@ def create_text_pdf(data, filename):
         pdf.draw_row(row, columns, divider=divider)
         pdf.draw_separator(columns, divider=divider)
 
-    pdf.output(filename)
+    return pdf.output()
 
 
 def main():
@@ -310,24 +300,28 @@ def main():
     input_text = input_text.replace('\r\n', '\n')
     demisto.info(f'Input text: {input_text}')
 
-    rules = extract_rules(input_text)
+    try:
+        rules = extract_rules(input_text)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"rules_{timestamp}.pdf"
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"rules_{timestamp}.pdf"
 
-    pdf_data = create_text_pdf(rules, filename)
+        pdf_data = create_text_pdf(rules, filename)
 
-    file_entry = fileResult(filename, pdf_data)
-    demisto.results(file_entry)
+        file_entry = fileResult(filename, pdf_data)
+        demisto.results(file_entry)
 
-    # Put EntryID and name in context for playbook/automation chaining
-    return_results(CommandResults(
-        outputs_prefix="ExtractedRulespdf",
-        outputs={
-            "EntryID": file_entry.get("FileID"),
-            "Name": filename
-        }
-    ))
+        # Put EntryID and name in context for playbook/automation chaining
+        return_results(CommandResults(
+            outputs_prefix="ExtractedRulespdf",
+            outputs={
+                "EntryID": file_entry.get("FileID"),
+                "Name": filename
+            }
+        ))
+    except Exception as e:
+        demisto.error(f"Error processing input: {e}")
+        return_results(f"Error processing input: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -205,9 +205,7 @@ class MinimalPDF:
 
         # Trailer
         pdf += (f"trailer\n<< /Size {obj_count} /Root {catalog_obj} 0 R >>\nstartxref\n{xref_start}\n%%EOF\n").encode()
-
-        with open(self.filename, "wb") as f:
-            f.write(pdf)
+        return pdf
 
     def _escape(self, txt):
         return txt.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
@@ -288,8 +286,7 @@ def create_text_pdf(data, filename):
         pdf.draw_row(row, columns, divider=divider)
         pdf.draw_separator(columns, divider=divider)
 
-    pdf.output()
-    print(f"[Local Dev] Saved file: {filename}")
+    return pdf.output()
 
 
 def main():
@@ -304,7 +301,10 @@ def main():
         rules = extract_rules(input_text)
         if rules:
             pdf_filename = f"rules_{timestamp}.pdf"
-            create_text_pdf(rules, pdf_filename)
+            bin_pdf = create_text_pdf(rules, pdf_filename)
+            with open(pdf_filename, "wb") as f:
+                f.write(bin_pdf)
+            print(f"[Local Dev] Saved file: {pdf_filename}")
         else:
             print("No rules found in the input.")
     except Exception as e:
