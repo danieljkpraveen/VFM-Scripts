@@ -308,8 +308,8 @@ def main():
 
         pdf_data = create_text_pdf(rules, filename)
 
-        file_entry = fileResult(filename, pdf_data)
-        demisto.results(file_entry)
+        file_entry = fileResult(filename, pdf_data, file_type=EntryType.FILE)
+        return_results(file_entry)
 
         # Put EntryID and name in context for playbook/automation chaining
         return_results(CommandResults(
