@@ -301,7 +301,7 @@ def main():
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"rules_{timestamp}.pdf"
 
-    pdf_data = create_text_pdf(rules, pdf_filename)
+    pdf_data = create_text_pdf(rules, filename)
 
     file_entry = fileResult(filename, pdf_data)
     demisto.results(file_entry)
