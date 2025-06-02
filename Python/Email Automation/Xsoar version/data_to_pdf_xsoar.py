@@ -77,14 +77,14 @@ class MinimalPDF:
         for i, (col_x, col_width) in enumerate(columns):
             # Calculate separator length for the current column
             sep_len = col_width // self.char_width
-            self.text(col_x, self.y, "-" * sep_len)
+            self.text(col_x, self.y, "_" * sep_len)
 
             # Add divider separator if not the last column
             if i < len(columns) - 1:
                 next_col_x = columns[i + 1][0]
                 divider_len = (next_col_x - (col_x + col_width)
                                ) // self.char_width
-                self.text(col_x + col_width, self.y, "-" * divider_len)
+                self.text(col_x + col_width, self.y, "_" * divider_len)
 
         # Move to the next line
         self.y -= self.leading
@@ -129,16 +129,18 @@ class MinimalPDF:
         Adds a header with a separator line below it.
         :param header_text: The text for the header.
         """
+        old_font_size = self.font_size
         self.set_font(16)  # Set font size for header
         self.cell(0, 20, header_text)  # Add header text
-        self.set_font(12)  # Reset font size for separator
-        separator = "=" * (self.get_usable_width() // self.char_width)
+        self.set_font(10)  # Reset font size for separator
+        separator = "_" * (self.get_usable_width() // self.char_width)
         self.cell(0, 20, separator)  # Add separator line
         self.y -= self.leading  # Move to the next line
+        self.set_font(old_font_size)  # Restore original font size
         if self.y < self.margin:
             self.add_page()
 
-    def output(self):
+    def output(self, filename):
         if self.current_content:
             self.pages.append(self.current_content)
         # PDF header
@@ -204,8 +206,20 @@ class MinimalPDF:
         # Trailer
         pdf += (f"trailer\n<< /Size {obj_count} /Root {catalog_obj} 0 R >>\nstartxref\n{xref_start}\n%%EOF\n").encode()
 
-        with open(self.filename, "wb") as f:
-            f.write(pdf)
+        # with open(self.filename, "wb") as f:
+        #     f.write(pdf)
+
+        file_entry = fileResult(filename, pdf)
+        demisto.results(file_entry)
+
+        # Put EntryID and name in context for playbook/automation chaining
+        return_results(CommandResults(
+            outputs_prefix="ExtractedRulesExcel",
+            outputs={
+                "EntryID": file_entry.get("FileID"),
+                "Name": filename
+            }
+        ))
 
     def _escape(self, txt):
         return txt.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
@@ -266,8 +280,9 @@ def extract_rules(text):
 
 def create_text_pdf(data, filename):
     pdf = MinimalPDF(filename)
-    pdf.set_margin(30)  # set margin size
-    pdf.add_header("Keys and Values")  # add header
+    pdf.set_margin(30)  # Example: Set a custom margin
+    pdf.set_font(9)
+    pdf.add_header("Keys and Values")  # Use the new header method
 
     # Define columns dynamically
     columns = [
@@ -281,7 +296,7 @@ def create_text_pdf(data, filename):
         pdf.draw_row(row, columns, divider=divider)
         pdf.draw_separator(columns, divider=divider)
 
-    return pdf.output()
+    pdf.output(filename)
 
 
 def main():
