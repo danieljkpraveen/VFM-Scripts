@@ -281,8 +281,7 @@ def create_text_pdf(data, filename):
         pdf.draw_row(row, columns, divider=divider)
         pdf.draw_separator(columns, divider=divider)
 
-    pdf.output()
-    print(f"[Local Dev] Saved file: {filename}")
+    return pdf.output()
 
 
 def main():
