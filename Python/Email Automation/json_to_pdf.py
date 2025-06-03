@@ -1,8 +1,9 @@
+import json
+import xlsxwriter
 import re
-from datetime import datetime
+import sys
 
 
-######## Custom utility Class to create PDF files ########
 class MinimalPDF:
     def __init__(self, filename, page_width=595, page_height=842, margin=50):
         self.filename = filename
@@ -205,127 +206,117 @@ class MinimalPDF:
 
         # Trailer
         pdf += (f"trailer\n<< /Size {obj_count} /Root {catalog_obj} 0 R >>\nstartxref\n{xref_start}\n%%EOF\n").encode()
-
-        # with open(self.filename, "wb") as f:
-        #     f.write(pdf)
-
         return pdf
 
     def _escape(self, txt):
         return txt.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-####### Script functionality starts here ########
-def extract_rules(text):
-    """
-    Extract rules and their values from the input.
-    Handles:
-      - "Rules ..." value="[\"...\",\"...\"]"
-      - Rules ... value=["...", "..."]
-      - Rules ... =["...", "..."]
-      - Rules ... - ["...", "..."]
-      - Rules ... - ... (plain text)
-      - Rules ... . ... (plain text)
-    """
-    extracted = []
+try:
+    # Read input from stdin
+    raw_input = sys.stdin.read().strip()
 
-    # Pattern for quoted or unquoted task and value
-    pattern_value = r'(?:"([^"]+)"|(\bRules[^\s=:-]+.*?))\s+value\s*=\s*(?:"|\')\[(.*?)\](?:"|\')'
-    # Pattern for unquoted list after = or -
-    pattern_list = r'(Rules.*?)(?:=|-)\s*\[(.*?)\]'
-    # Pattern for single value after dash or period
-    pattern_single = r'(Rules.*?)(?:-|\.)(?!\s*\[)(.*?)(?=(?:Rules|$))'
+    # Try to extract JSON array or object using regex
+    array_pattern = r'="(\[.*?\])"'
+    object_pattern = r'Input="({.*})"'
 
-    # First, extract all rules with quoted or unquoted value=
-    for match in re.finditer(pattern_value, text, re.DOTALL):
-        rule_desc = match.group(1) or match.group(2)
-        values = match.group(3).replace('\\', '')
-        result = ', '.join([v.strip().strip('"').strip("'")
-                           for v in values.split(',')])
-        extracted.append([rule_desc.strip(), result])
+    json_str = None
 
-    # Remove already matched parts to avoid duplicates
-    text = re.sub(pattern_value, '', text, flags=re.DOTALL)
+    array_matches = re.findall(array_pattern, raw_input)
+    object_match = re.search(object_pattern, raw_input)
 
-    # Then, extract all rules with lists (excluding value=)
-    for match in re.finditer(pattern_list, text, re.DOTALL):
-        rule_desc = match.group(1).strip().rstrip('= -').strip()
-        values = match.group(2).replace('\\', '')
-        result = ', '.join([v.strip().strip('"').strip("'")
-                           for v in values.split(',')])
-        extracted.append([rule_desc, result])
+    pdf = MinimalPDF("output.pdf")
 
-    # Remove already matched parts to avoid duplicates
-    text_cleaned = re.sub(pattern_list, '', text, flags=re.DOTALL)
+    if array_matches and len(array_matches) > 1:
+        # Process both arrays (value and regex)
+        arrays = []
+        for match in array_matches:
+            arr = json.loads(bytes(match, "utf-8").decode("unicode_escape"))
+            arrays.append(arr)
 
-    # Now extract single-value rules (not followed by [ ... ])
-    for match in re.finditer(pattern_single, text_cleaned, re.DOTALL):
-        rule_desc = match.group(1).strip().rstrip('= -').strip()
-        value = match.group(2).strip().strip('.').strip()
-        if value:
-            extracted.append([rule_desc, value])
+        # Add header and rows to PDF
+        pdf.add_header("Keys and Values")
+        columns = [(pdf.margin, pdf.get_usable_width() // 2),
+                   (pdf.margin + pdf.get_usable_width() // 2, pdf.get_usable_width() // 2)]
+        pdf.draw_separator(columns)
 
-    return extracted
+        max_len = max(len(arrays[0]), len(arrays[1]))
+        for row in range(max_len):
+            row_data = [
+                arrays[0][row] if row < len(arrays[0]) else "",
+                arrays[1][row] if row < len(arrays[1]) else ""
+            ]
+            pdf.draw_row(row_data, columns)
 
+        bin_pdf = pdf.output()
+        with open("output.pdf", "wb") as f:
+            f.write(bin_pdf)
+        print("PDF file 'output.pdf' has been created successfully.")
+    elif array_matches:
+        # Only one array found, process as before
+        json_str = array_matches[0]
+        json_str = bytes(json_str, "utf-8").decode("unicode_escape")
+        data = json.loads(json_str)
 
-def create_text_pdf(data, filename):
-    pdf = MinimalPDF(filename)
-    pdf.set_margin(30)  # Example: Set a custom margin
-    pdf.set_font(9)
-    pdf.add_header("Keys and Values")  # Use the new header method
+        # Add header and rows to PDF
+        pdf.add_header("Values")
+        columns = [(pdf.margin, pdf.get_usable_width())]
+        pdf.draw_separator(columns)
 
-    # Define columns dynamically
-    columns = [
-        (pdf.margin, 200),  # Column 1: X position = margin, Width = 200
-        (pdf.margin + 210, 200),  # Column 2: X position = margin + 210, Width = 200
-    ]
-    divider = " | "
+        for rule in data:
+            pdf.cell(0, 20, str(rule))
 
-    # Rows
-    for row in data:
-        pdf.draw_row(row, columns, divider=divider)
-        pdf.draw_separator(columns, divider=divider)
+        bin_pdf = pdf.output()
+        with open("output.pdf", "wb") as f:
+            f.write(bin_pdf)
+        print("PDF file 'output.pdf' has been created successfully.")
+    elif object_match:
+        json_str = object_match.group(1)
+        json_str = bytes(json_str, "utf-8").decode("unicode_escape")
+        data = json.loads(json_str)
+        if isinstance(data, dict) and "Commands" in data:
+            commands = data["Commands"]
 
-    return pdf.output()
+            # Add header and rows to PDF
+            pdf.add_header("Commands")
+            headers = list(commands[0].keys())
+            col_width = pdf.get_usable_width() // len(headers)
+            columns = [(pdf.margin + i * col_width, col_width)
+                       for i in range(len(headers))]
+            pdf.draw_separator(columns)
 
+            for cmd in commands:
+                row_data = [str(cmd.get(header, "")) for header in headers]
+                pdf.draw_row(row_data, columns)
 
-def main():
-    args = demisto.args()
-    input_text = args.get("input_text", "")
-    if not input_text:
-        input_text = next(iter(args.values()), "")
-    if isinstance(input_text, (dict, list)):
-        input_text = str(input_text)
-    input_text = input_text.replace('\r\n', '\n')
+            bin_pdf = pdf.output()
+            with open("output.pdf", "wb") as f:
+                f.write(bin_pdf)
+            print("PDF file 'output.pdf' has been created successfully.")
+        else:
+            print("Unsupported JSON structure.")
+    else:
+        fallback_match = re.search(r'(\{.*\}|\[.*\])', raw_input)
+        if fallback_match:
+            json_str = fallback_match.group(1)
+            json_str = bytes(json_str, "utf-8").decode("unicode_escape")
+            data = json.loads(json_str)
+            if isinstance(data, list):
+                # Add header and rows to PDF
+                pdf.add_header("Values")
+                columns = [(pdf.margin, pdf.get_usable_width())]
+                pdf.draw_separator(columns)
 
-    try:
-        rules = extract_rules(input_text)
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"rules_{timestamp}.pdf"
-        pdf_data = create_text_pdf(rules, filename)
+                for rule in data:
+                    pdf.cell(0, 20, str(rule))
 
-        if isinstance(pdf_data, str):
-            pdf_data = pdf_data.encode()
-
-        file_entry = fileResult(filename, pdf_data)
-        return_results(file_entry)
-
-        # Misc notes:
-        # - fileResult - creates a file from data
-        # - CommandResults - returns result to war room
-        # - doc: https://xsoar.pan.dev/docs/reference/api/common-server-python
-
-        return_results(CommandResults(
-            outputs_prefix="ExtractedRulespdf.file",
-            outputs={
-                "EntryID": file_entry.get("FileID"),
-                "Name": filename
-            }
-        ))
-    except Exception as e:
-        demisto.error(f"Error processing input: {e}")
-        return_results(f"Error processing input: {str(e)}")
-
-
-if __name__ == "__main__":
-    main()
+                bin_pdf = pdf.output()
+                with open("output.pdf", "wb") as f:
+                    f.write(bin_pdf)
+                print("PDF file 'output.pdf' has been created successfully.")
+            else:
+                print("Unsupported JSON structure.")
+        else:
+            print("No valid JSON array or object found in the input string")
+except Exception as e:
+    print(f"An error occurred: {e}")
