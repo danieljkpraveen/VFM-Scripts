@@ -307,37 +307,21 @@ def main():
         if isinstance(pdf_data, str):
             pdf_data = pdf_data.encode()
 
-        # file_entry = fileResult(filename, pdf_data)
-        # return_results(file_entry)
+        file_entry = fileResult(filename, pdf_data)
+        demisto.results(file_entry)
+
+        return_results(CommandResults(
+            outputs_prefix="ExtractedRulesPdf.file",
+            outputs={
+                "EntryID": file_entry.get("FileID"),
+                "Name": filename
+            }
+        ))
 
         # Misc notes:
         # - fileResult - creates a file from data
         # - CommandResults - returns result to war room
         # - doc: https://xsoar.pan.dev/docs/reference/api/common-server-python
-
-        # return_results(CommandResults(
-        #     outputs_prefix="ExtractedRulespdf.file",
-        #     outputs={
-        #         "EntryID": file_entry.get("FileID"),
-        #         "Name": filename
-        #     }
-        # ))
-
-        file_entry = {
-            "FileID": "12345",  # Example FileID, replace with dynamically generated ID
-            "Type": "pdf",
-            "Name": filename,
-            "Contents": pdf_data,
-            "ContentsFormat": "base64"
-        }
-
-        command_result = CommandResults(
-            outputs_prefix="ExtractedRulespdf.file",
-            outputs=file_entry,
-            readable_output=f"The file '{filename}' has been created successfully."
-        )
-
-        return_results(command_result)
 
     except Exception as e:
         demisto.error(f"Error processing input: {e}")
