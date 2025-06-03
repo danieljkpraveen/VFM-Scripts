@@ -312,19 +312,18 @@ def main():
         filename = f"rules_{timestamp}.pdf"
         pdf_data = create_text_pdf(rules, filename)
 
-        if isinstance(pdf_data, str):
-            pdf_data = pdf_data.encode()
+        # file_entry = fileResult(filename, pdf_data)
+        # return_results(file_entry)
 
-        file_entry = fileResult(filename, pdf_data)
-        demisto.results(file_entry)
+        # return_results(CommandResults(
+        #     outputs_prefix="ExtractedRulesPdf.file",
+        #     outputs={
+        #         "EntryID": file_entry.get("FileID"),
+        #         "Name": filename
+        #     }
+        # ))
 
-        return_results(CommandResults(
-            outputs_prefix="ExtractedRulesPdf.file",
-            outputs={
-                "EntryID": file_entry.get("FileID"),
-                "Name": filename
-            }
-        ))
+        return_results(fileResult(filename, pdf_data))
 
         # Misc notes:
         # - fileResult - creates a file from data
