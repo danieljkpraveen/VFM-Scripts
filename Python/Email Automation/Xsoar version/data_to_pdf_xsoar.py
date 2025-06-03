@@ -291,14 +291,12 @@ def create_text_pdf(data, filename):
 
 def main():
     args = demisto.args()
-    demisto.info(f'Args received: {args}')
     input_text = args.get("input_text", "")
     if not input_text:
         input_text = next(iter(args.values()), "")
     if isinstance(input_text, (dict, list)):
         input_text = str(input_text)
     input_text = input_text.replace('\r\n', '\n')
-    demisto.info(f'Input text: {input_text}')
 
     try:
         rules = extract_rules(input_text)
@@ -308,17 +306,34 @@ def main():
 
         pdf_data = create_text_pdf(rules, filename)
 
-        file_entry = fileResult(filename, pdf_data, file_type=EntryType.FILE)
-        return_results(file_entry)
+        file_entry = fileResult(filename, pdf_data)
+        # return_results(file_entry)
 
         # Put EntryID and name in context for playbook/automation chaining
-        return_results(CommandResults(
-            outputs_prefix="ExtractedRulespdf",
-            outputs={
-                "EntryID": file_entry.get("FileID"),
-                "Name": filename
-            }
-        ))
+        
+        # Misc notes: 
+        # - fileResult - creates a file from data
+        # - CommandResults - returns result to war room
+        # - doc: https://xsoar.pan.dev/docs/reference/api/common-server-python
+        
+        return_results([
+            file_entry,
+            CommandResults(
+                outputs_prefix="ExtractedRulespdf",
+                outputs={
+                    "EntryID": file_entry.get("FileID"),
+                    "Name": filename
+                }
+            )
+        ])
+
+        # return_results(CommandResults(
+        #     outputs_prefix="ExtractedRulespdf",
+        #     outputs={
+        #         "EntryID": file_entry.get("FileID"),
+        #         "Name": filename
+        #     }
+        # ))
     except Exception as e:
         demisto.error(f"Error processing input: {e}")
         return_results(f"Error processing input: {str(e)}")
