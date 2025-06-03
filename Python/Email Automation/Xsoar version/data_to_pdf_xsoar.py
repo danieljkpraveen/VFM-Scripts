@@ -143,58 +143,70 @@ class MinimalPDF:
     def output(self):
         if self.current_content:
             self.pages.append(self.current_content)
-        # PDF header
         pdf = b"%PDF-1.4\n"
         xref = []
         obj_count = 1
 
+        # Info dictionary (standard metadata)
+        xref.append(len(pdf))
+        info_obj = obj_count
+        info_dict = (f"{info_obj} 0 obj\n"
+                     f"<< /Title ({self.metadata['Title']})\n"
+                     f"/Author ({self.metadata['Author']})\n"
+                     f"/Producer ({self.metadata['Producer']})\n"
+                     f"/CreationDate (D:{self.metadata['CreateDate'].replace('-', '').replace(':', '')})\n"
+                     f"/ModDate (D:{self.metadata['ModifyDate'].replace('-', '').replace(':', '')})\n"
+                     f">>\nendobj\n")
+        pdf += info_dict.encode()
+        obj_count += 1
+
         # Font object
+        xref.append(len(pdf))
         font_obj = obj_count
         font = f"{font_obj} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"
         pdf += font.encode()
-        xref.append(len(pdf))
         obj_count += 1
 
         # Page content objects
         content_objs = []
         for content in self.pages:
+            xref.append(len(pdf))
             content_obj = obj_count
             stream = f"{content_obj} 0 obj\n<< /Length {len(content.encode())} >>\nstream\n{content}endstream\nendobj\n"
             pdf += stream.encode()
-            xref.append(len(pdf))
             content_objs.append(content_obj)
             obj_count += 1
 
         # Page objects
         page_objs = []
         for idx, content_obj in enumerate(content_objs):
+            xref.append(len(pdf))
             page_obj = obj_count
             page = (f"{page_obj} 0 obj\n"
-                    f"<< /Type /Page /Parent 0 0 R /MediaBox [0 0 {self.page_width} {self.page_height}] "
+                    f"<< /Type /Page /Parent {obj_count + 1} 0 R /MediaBox [0 0 {self.page_width} {self.page_height}] "
                     f"/Contents {content_obj} 0 R /Resources << /Font << /F1 {font_obj} 0 R >> >> >>\n"
                     f"endobj\n")
             pdf += page.encode()
-            xref.append(len(pdf))
             page_objs.append(page_obj)
             obj_count += 1
 
         # Pages root object
+        xref.append(len(pdf))
         pages_obj = obj_count
         kids = " ".join([f"{p} 0 R" for p in page_objs])
         pages = (f"{pages_obj} 0 obj\n"
                  f"<< /Type /Pages /Kids [{kids}] /Count {len(page_objs)} >>\n"
                  f"endobj\n")
         pdf += pages.encode()
-        xref.append(len(pdf))
         obj_count += 1
 
         # Catalog object
+        xref.append(len(pdf))
         catalog_obj = obj_count
         catalog = (f"{catalog_obj} 0 obj\n"
                    f"<< /Type /Catalog /Pages {pages_obj} 0 R >>\n"
                    f"endobj\n")
         pdf += catalog.encode()
-        xref.append(len(pdf))
         obj_count += 1
 
         # Xref table
@@ -204,11 +216,7 @@ class MinimalPDF:
             pdf += b"%010d 00000 n \n" % offset
 
         # Trailer
-        pdf += (f"trailer\n<< /Size {obj_count} /Root {catalog_obj} 0 R >>\nstartxref\n{xref_start}\n%%EOF\n").encode()
-
-        # with open(self.filename, "wb") as f:
-        #     f.write(pdf)
-
+        pdf += (f"trailer\n<< /Size {obj_count} /Root {catalog_obj} 0 R /Info {info_obj} 0 R >>\nstartxref\n{xref_start}\n%%EOF\n").encode()
         return pdf
 
     def _escape(self, txt):
