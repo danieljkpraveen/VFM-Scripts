@@ -1,7 +1,7 @@
 import re
 import sys
 import datetime
-import io  # Add this import at the top of the file
+import io
 
 
 class MinimalPDF:
@@ -59,10 +59,19 @@ class MinimalPDF:
         return self.page_width - 2 * self.margin
 
     def add_page(self):
+        """
+        Adds a new page and ensures the page border is drawn.
+        """
         if self.current_content:
             self.pages.append(self.current_content)
             self.current_content = ""
-            self.y = self.page_height - self.margin
+
+        # Reset vertical position to start below the top margin
+        # Ensure content starts below the margin
+        self.y = self.page_height - self.margin - self.leading
+
+        # Draw the page border for the new page
+        self.draw_page_border()
 
     def set_font(self, size):
         self.font_size = size
@@ -123,47 +132,114 @@ class MinimalPDF:
         :param columns: List of tuples [(col_x, col_width), ...] defining column positions and widths.
         :param divider: The divider string between columns.
         """
+        # Add padding to the left margin for cell content
+        left_padding = 10
+
         # Wrap text for each column
         wrapped_columns = [
-            self.wrap_text(data, col_width) for data, (_, col_width) in zip(row_data, columns)
+            self.wrap_text(data, col_width - left_padding) for data, (_, col_width) in zip(row_data, columns)
         ]
         max_lines = max(len(lines) for lines in wrapped_columns)
 
         for i in range(max_lines):
+            # Check if the current vertical position exceeds the margin
+            if self.y - self.leading < self.margin:
+                self.add_page()
+
             for j, (col_x, col_width) in enumerate(columns):
+                # Adjust column position with padding for the first column
+                text_x = col_x + (left_padding if j == 0 else 0)
                 text = wrapped_columns[j][i] if i < len(
                     wrapped_columns[j]) else ""
-                self.text(col_x, self.y, text)
+                self.text(text_x, self.y, text)
 
                 # Add divider if not the last column
                 if j < len(columns) - 1:
                     self.text(col_x + col_width, self.y, divider)
 
+            # Move to the next line
             self.y -= self.leading
+
+            # Ensure the vertical position respects the margin
             if self.y < self.margin:
                 self.add_page()
 
     def cell(self, w, h, txt):
-        self.text(self.margin, self.y, txt)
-        self.y -= self.leading
+        """
+        Places text in a single cell with specified width and height.
+        :param w: Width of the cell.
+        :param h: Height of the cell.
+        :param txt: Text to be placed in the cell.
+        """
+        # Add padding to the left margin for cell content
+        left_padding = 10
+
+        # Calculate usable width for the text within the cell
+        usable_width = w - self.margin - left_padding
+        wrapped_text = self.wrap_text(txt, usable_width)
+
+        # Render each line of wrapped text within the cell
+        for line in wrapped_text:
+            # Adjust text position with padding
+            self.text(self.margin + left_padding, self.y, line)
+            self.y -= self.leading  # Move to the next line
+
+        # Adjust vertical position based on cell height
+        self.y -= h - (len(wrapped_text) * self.leading)
+
+        # Add a new page if the vertical position exceeds the margin
         if self.y < self.margin:
             self.add_page()
 
     def add_header(self, header_text):
         """
-        Adds a header with a separator line below it.
+        Adds a header with a separator line below it, ensuring it stays inside the page border.
         :param header_text: The text for the header.
         """
         old_font_size = self.font_size
         self.set_font(16)  # Set font size for header
-        self.cell(0, 20, header_text)  # Add header text
-        self.set_font(10)  # Reset font size for separator
-        separator = "_" * (self.get_usable_width() // self.char_width)
-        self.cell(0, 20, separator)  # Add separator line
-        self.y -= self.leading  # Move to the next line
+
+        # Render the header text centered within the usable width
+        usable_width = self.get_usable_width()
+        header_x = self.margin + \
+            (usable_width - len(header_text) * self.char_width) // 2
+        header_y = self.page_height - self.margin - \
+            self.leading  # Adjust Y to stay inside the border
+        self.text(header_x, header_y, header_text)
+
+        # Move to the next line for the separator
+        separator_y = header_y - self.leading
+        separator_start_x = self.margin
+        separator_end_x = self.page_width - self.margin
+
+        # Draw the separator line spanning the entire usable width
+        self.current_content += f"{separator_start_x} {separator_y} m {separator_end_x} {separator_y} l S\n"
+
+        # Update the vertical position for subsequent content
+        self.y = separator_y - self.leading
         self.set_font(old_font_size)  # Restore original font size
+
+        # Add a new page if the vertical position exceeds the margin
         if self.y < self.margin:
             self.add_page()
+
+    def draw_page_border(self):
+        """
+        Draws a border around the page based on the current margin.
+        """
+        border_start_x = self.margin
+        border_start_y = self.margin
+        border_end_x = self.page_width - self.margin
+        border_end_y = self.page_height - self.margin
+
+        # Draw the rectangle border
+        self.current_content += (
+            f"{border_start_x} {border_start_y} m "
+            f"{border_end_x} {border_start_y} l "
+            f"{border_end_x} {border_end_y} l "
+            f"{border_start_x} {border_end_y} l "
+            f"h S\n"
+        )
 
     def output(self):
         if self.current_content:
@@ -309,15 +385,23 @@ def extract_rules(text):
 
 
 def create_text_pdf(data, filename):
+    # Assumes data is a list of lists.
     pdf = MinimalPDF(filename)
-    pdf.set_margin(30)  # Example: Set a custom margin
-    pdf.set_font(9)
-    pdf.add_header("Keys and Values")  # Use the new header method
 
-    # Define columns dynamically
+    pdf.set_margin(40)
+    pdf.set_font(9)
+    pdf.draw_page_border()
+    pdf.add_header("Keys and Values")
+
+    # Calculate usable width dynamically based on margins
+    usable_width = pdf.get_usable_width()
+    # Define spacing between columns
+    spacing = 10
+    # Adjust column widths to fit within usable width, including spacing
+    column_width = (usable_width - spacing) // 2
     columns = [
-        (pdf.margin, 200),  # Column 1: X position = margin, Width = 200
-        (pdf.margin + 210, 200),  # Column 2: X position = margin + 210, Width = 200
+        (pdf.margin, column_width),
+        (pdf.margin + column_width + spacing, column_width),
     ]
     divider = " | "
 
