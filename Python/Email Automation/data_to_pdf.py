@@ -420,10 +420,12 @@ class MinimalPDF:
                      f"/CreationDate (D:{self.metadata['CreateDate'].replace('-', '').replace(':', '')})\n"
                      f"/ModDate (D:{self.metadata['ModifyDate'].replace('-', '').replace(':', '')})\n"
                      f">>\nendobj\n")
+        # Write metadata to PDF stream and increment object count
         pdf.write(info_dict.encode())
         obj_count += 1
 
-        # Font object
+        # Saves current position in xref table
+        # Create a font object (Helvetica) and writes it to the PDF stream
         xref.append(pdf.tell())
         font_obj = obj_count
         font = f"{font_obj} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"
@@ -435,20 +437,33 @@ class MinimalPDF:
         for content in self.pages:
             xref.append(pdf.tell())
             content_obj = obj_count
+            # Construct stream string using pdf syntax::
+            # - Define content object with length of content
+            # - Wrap page content in a stream markers
             stream = f"{content_obj} 0 obj\n<< /Length {len(content.encode())} >>\nstream\n{content}endstream\nendobj\n"
+            # Encode stream as UTF-8 bytes and write to PDF stream
             pdf.write(stream.encode())
+            # Save content object for later reference
             content_objs.append(content_obj)
             obj_count += 1
 
-        # Page objects
+        # Define list to store page objects of all pages
         page_objs = []
+
         for idx, content_obj in enumerate(content_objs):
             xref.append(pdf.tell())
             page_obj = obj_count
+            # Construct page string using pdf syntax:
+            # - Define page object with type, parent, media box, content, and resources
+            # - Parent is the page root object
+            # - MediaBox defines the page dimensions
+            # - Contents is the content object created earlier
+            # - Resources include the font object
             page = (f"{page_obj} 0 obj\n"
                     f"<< /Type /Page /Parent {obj_count + 1} 0 R /MediaBox [0 0 {self.page_width} {self.page_height}] "
                     f"/Contents {content_obj} 0 R /Resources << /Font << /F1 {font_obj} 0 R >> >> >>\n"
                     f"endobj\n")
+            # Encodes the constructed page as UTF-8 bytes and writes to PDF stream
             pdf.write(page.encode())
             page_objs.append(page_obj)
             obj_count += 1
@@ -456,14 +471,17 @@ class MinimalPDF:
         # Pages root object
         xref.append(pdf.tell())
         pages_obj = obj_count
+        # Use pdf syntax to construct kids array joining references to all page objects
         kids = " ".join([f"{p} 0 R" for p in page_objs])
+        # Construct pages object with type, kids, and count of pages
         pages = (f"{pages_obj} 0 obj\n"
                  f"<< /Type /Pages /Kids [{kids}] /Count {len(page_objs)} >>\n"
                  f"endobj\n")
         pdf.write(pages.encode())
         obj_count += 1
 
-        # Catalog object
+        # Catalog is the root object of the PDF document
+        # It contains references to the pages and other document-level information
         xref.append(pdf.tell())
         catalog_obj = obj_count
         catalog = (f"{catalog_obj} 0 obj\n"
@@ -472,19 +490,32 @@ class MinimalPDF:
         pdf.write(catalog.encode())
         obj_count += 1
 
-        # Xref table
+        # xref table is essential for PDF readers to locate objects in the PDF file
+        # Record the starting position of the xref table
         xref_start = pdf.tell()
+        # Write the xref table header and entries
         pdf.write(b"xref\n0 %d\n0000000000 65535 f \n" % obj_count)
         for offset in xref:
             pdf.write(b"%010d 00000 n \n" % offset)
 
-        # Trailer
+        # Trailer tells the PDF reader about the size of the document, root object, and info object
+        # It is table of contents for the PDF's internal structure
+        # Write trailer to pdf stream
         pdf.write(
             (f"trailer\n<< /Size {obj_count} /Root {catalog_obj} 0 R /Info {info_obj} 0 R >>\nstartxref\n{xref_start}\n%%EOF\n").encode())
-        pdf.seek(0)  # Reset the stream position to the beginning
+        # Reset the stream position to the beginning so it can be read from the start
+        pdf.seek(0)
+        # Return binary PDF stream
         return pdf
 
     def _escape(self, txt):
+        """
+        :description: Escapes special characters in the text to ensure it is correctly formatted for PDF output.
+        :param txt: The text to be escaped.
+        :return: The escaped text.
+        :example:
+        escaped_text = pdf._escape("This is a (test) with special characters like \\ and ()")
+        """
         return txt.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
