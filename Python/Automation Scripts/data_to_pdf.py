@@ -618,10 +618,11 @@ def main():
         rules = extract_rules(input_text)
         if rules:
             # pdf_filename = f"rules_{timestamp}.pdf"
-            pdf_filename = "example.pdf"
+            pdf_filename = "rules.pdf"
             bin_pdf = create_text_pdf(rules, pdf_filename)
+            bin_pdf.seek(0)
             with open(pdf_filename, "wb") as f:
-                f.write(bin_pdf.getvalue())
+                f.write(bin_pdf.read())
             print(f"[Local Dev] Saved file: {pdf_filename}")
         else:
             print("No rules found in the input.")

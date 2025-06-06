@@ -1,0 +1,180 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Length 5659 >>
+stream
+BT /F1 16 Tf 50 792 Td (Commands) Tj ET
+BT /F1 10 Tf 50 772 Td (__________________________________________________________________________________) Tj ET
+BT /F1 12 Tf 50 746 Td (_________________) Tj ET
+BT /F1 12 Tf 173 746 Td () Tj ET
+BT /F1 12 Tf 173 746 Td (_________________) Tj ET
+BT /F1 12 Tf 296 746 Td () Tj ET
+BT /F1 12 Tf 296 746 Td (_________________) Tj ET
+BT /F1 12 Tf 419 746 Td () Tj ET
+BT /F1 12 Tf 419 746 Td (_________________) Tj ET
+BT /F1 12 Tf 50 731 Td (test) Tj ET
+BT /F1 12 Tf 173 731 Td ( | ) Tj ET
+BT /F1 12 Tf 173 731 Td (2025-05-28T18:52:25.950703) Tj ET
+BT /F1 12 Tf 296 731 Td ( | ) Tj ET
+BT /F1 12 Tf 296 731 Td (192.168.29.221) Tj ET
+BT /F1 12 Tf 419 731 Td ( | ) Tj ET
+BT /F1 12 Tf 419 731 Td (admin1@PRODUCTIONFIREWALL\(active\)>) Tj ET
+BT /F1 12 Tf 50 716 Td (security-policy-match) Tj ET
+BT /F1 12 Tf 173 716 Td ( | ) Tj ET
+BT /F1 12 Tf 173 716 Td () Tj ET
+BT /F1 12 Tf 296 716 Td ( | ) Tj ET
+BT /F1 12 Tf 296 716 Td () Tj ET
+BT /F1 12 Tf 419 716 Td ( | ) Tj ET
+BT /F1 12 Tf 419 716 Td ("LAN-INTERNET-1;) Tj ET
+BT /F1 12 Tf 50 701 Td (protocol 6 source) Tj ET
+BT /F1 12 Tf 173 701 Td ( | ) Tj ET
+BT /F1 12 Tf 173 701 Td () Tj ET
+BT /F1 12 Tf 296 701 Td ( | ) Tj ET
+BT /F1 12 Tf 296 701 Td () Tj ET
+BT /F1 12 Tf 419 701 Td ( | ) Tj ET
+BT /F1 12 Tf 419 701 Td (index: 4" { from) Tj ET
+BT /F1 12 Tf 50 686 Td (192.168.29.57) Tj ET
+BT /F1 12 Tf 173 686 Td ( | ) Tj ET
+BT /F1 12 Tf 173 686 Td () Tj ET
+BT /F1 12 Tf 296 686 Td ( | ) Tj ET
+BT /F1 12 Tf 296 686 Td () Tj ET
+BT /F1 12 Tf 419 686 Td ( | ) Tj ET
+BT /F1 12 Tf 419 686 Td (any; source any;) Tj ET
+BT /F1 12 Tf 50 671 Td (destination) Tj ET
+BT /F1 12 Tf 173 671 Td ( | ) Tj ET
+BT /F1 12 Tf 173 671 Td () Tj ET
+BT /F1 12 Tf 296 671 Td ( | ) Tj ET
+BT /F1 12 Tf 296 671 Td () Tj ET
+BT /F1 12 Tf 419 671 Td ( | ) Tj ET
+BT /F1 12 Tf 419 671 Td (source-region) Tj ET
+BT /F1 12 Tf 50 656 Td (8.8.8.8) Tj ET
+BT /F1 12 Tf 173 656 Td ( | ) Tj ET
+BT /F1 12 Tf 173 656 Td () Tj ET
+BT /F1 12 Tf 296 656 Td ( | ) Tj ET
+BT /F1 12 Tf 296 656 Td () Tj ET
+BT /F1 12 Tf 419 656 Td ( | ) Tj ET
+BT /F1 12 Tf 419 656 Td (none; to any;) Tj ET
+BT /F1 12 Tf 50 641 Td (destination-port) Tj ET
+BT /F1 12 Tf 173 641 Td ( | ) Tj ET
+BT /F1 12 Tf 173 641 Td () Tj ET
+BT /F1 12 Tf 296 641 Td ( | ) Tj ET
+BT /F1 12 Tf 296 641 Td () Tj ET
+BT /F1 12 Tf 419 641 Td ( | ) Tj ET
+BT /F1 12 Tf 419 641 Td (destination any;) Tj ET
+BT /F1 12 Tf 50 626 Td (443) Tj ET
+BT /F1 12 Tf 173 626 Td ( | ) Tj ET
+BT /F1 12 Tf 173 626 Td () Tj ET
+BT /F1 12 Tf 296 626 Td ( | ) Tj ET
+BT /F1 12 Tf 296 626 Td () Tj ET
+BT /F1 12 Tf 419 626 Td ( | ) Tj ET
+BT /F1 12 Tf 419 626 Td (destination-region) Tj ET
+BT /F1 12 Tf 50 611 Td () Tj ET
+BT /F1 12 Tf 173 611 Td ( | ) Tj ET
+BT /F1 12 Tf 173 611 Td () Tj ET
+BT /F1 12 Tf 296 611 Td ( | ) Tj ET
+BT /F1 12 Tf 296 611 Td () Tj ET
+BT /F1 12 Tf 419 611 Td ( | ) Tj ET
+BT /F1 12 Tf 419 611 Td (none; user any;) Tj ET
+BT /F1 12 Tf 50 596 Td () Tj ET
+BT /F1 12 Tf 173 596 Td ( | ) Tj ET
+BT /F1 12 Tf 173 596 Td () Tj ET
+BT /F1 12 Tf 296 596 Td ( | ) Tj ET
+BT /F1 12 Tf 296 596 Td () Tj ET
+BT /F1 12 Tf 419 596 Td ( | ) Tj ET
+BT /F1 12 Tf 419 596 Td (source-device) Tj ET
+BT /F1 12 Tf 50 581 Td () Tj ET
+BT /F1 12 Tf 173 581 Td ( | ) Tj ET
+BT /F1 12 Tf 173 581 Td () Tj ET
+BT /F1 12 Tf 296 581 Td ( | ) Tj ET
+BT /F1 12 Tf 296 581 Td () Tj ET
+BT /F1 12 Tf 419 581 Td ( | ) Tj ET
+BT /F1 12 Tf 419 581 Td (any;) Tj ET
+BT /F1 12 Tf 50 566 Td () Tj ET
+BT /F1 12 Tf 173 566 Td ( | ) Tj ET
+BT /F1 12 Tf 173 566 Td () Tj ET
+BT /F1 12 Tf 296 566 Td ( | ) Tj ET
+BT /F1 12 Tf 296 566 Td () Tj ET
+BT /F1 12 Tf 419 566 Td ( | ) Tj ET
+BT /F1 12 Tf 419 566 Td (destination-device) Tj ET
+BT /F1 12 Tf 50 551 Td () Tj ET
+BT /F1 12 Tf 173 551 Td ( | ) Tj ET
+BT /F1 12 Tf 173 551 Td () Tj ET
+BT /F1 12 Tf 296 551 Td ( | ) Tj ET
+BT /F1 12 Tf 296 551 Td () Tj ET
+BT /F1 12 Tf 419 551 Td ( | ) Tj ET
+BT /F1 12 Tf 419 551 Td (any; category) Tj ET
+BT /F1 12 Tf 50 536 Td () Tj ET
+BT /F1 12 Tf 173 536 Td ( | ) Tj ET
+BT /F1 12 Tf 173 536 Td () Tj ET
+BT /F1 12 Tf 296 536 Td ( | ) Tj ET
+BT /F1 12 Tf 296 536 Td () Tj ET
+BT /F1 12 Tf 419 536 Td ( | ) Tj ET
+BT /F1 12 Tf 419 536 Td (any;) Tj ET
+BT /F1 12 Tf 50 521 Td () Tj ET
+BT /F1 12 Tf 173 521 Td ( | ) Tj ET
+BT /F1 12 Tf 173 521 Td () Tj ET
+BT /F1 12 Tf 296 521 Td ( | ) Tj ET
+BT /F1 12 Tf 296 521 Td () Tj ET
+BT /F1 12 Tf 419 521 Td ( | ) Tj ET
+BT /F1 12 Tf 419 521 Td (application/service) Tj ET
+BT /F1 12 Tf 50 506 Td () Tj ET
+BT /F1 12 Tf 173 506 Td ( | ) Tj ET
+BT /F1 12 Tf 173 506 Td () Tj ET
+BT /F1 12 Tf 296 506 Td ( | ) Tj ET
+BT /F1 12 Tf 296 506 Td () Tj ET
+BT /F1 12 Tf 419 506 Td ( | ) Tj ET
+BT /F1 12 Tf 419 506 Td (0:any/any/any/any;) Tj ET
+BT /F1 12 Tf 50 491 Td () Tj ET
+BT /F1 12 Tf 173 491 Td ( | ) Tj ET
+BT /F1 12 Tf 173 491 Td () Tj ET
+BT /F1 12 Tf 296 491 Td ( | ) Tj ET
+BT /F1 12 Tf 296 491 Td () Tj ET
+BT /F1 12 Tf 419 491 Td ( | ) Tj ET
+BT /F1 12 Tf 419 491 Td (action allow;) Tj ET
+BT /F1 12 Tf 50 476 Td () Tj ET
+BT /F1 12 Tf 173 476 Td ( | ) Tj ET
+BT /F1 12 Tf 173 476 Td () Tj ET
+BT /F1 12 Tf 296 476 Td ( | ) Tj ET
+BT /F1 12 Tf 296 476 Td () Tj ET
+BT /F1 12 Tf 419 476 Td ( | ) Tj ET
+BT /F1 12 Tf 419 476 Td (icmp-unreachable:) Tj ET
+BT /F1 12 Tf 50 461 Td () Tj ET
+BT /F1 12 Tf 173 461 Td ( | ) Tj ET
+BT /F1 12 Tf 173 461 Td () Tj ET
+BT /F1 12 Tf 296 461 Td ( | ) Tj ET
+BT /F1 12 Tf 296 461 Td () Tj ET
+BT /F1 12 Tf 419 461 Td ( | ) Tj ET
+BT /F1 12 Tf 419 461 Td (no terminal yes;) Tj ET
+BT /F1 12 Tf 50 446 Td () Tj ET
+BT /F1 12 Tf 173 446 Td ( | ) Tj ET
+BT /F1 12 Tf 173 446 Td () Tj ET
+BT /F1 12 Tf 296 446 Td ( | ) Tj ET
+BT /F1 12 Tf 296 446 Td () Tj ET
+BT /F1 12 Tf 419 446 Td ( | ) Tj ET
+BT /F1 12 Tf 419 446 Td (}) Tj ET
+endstream
+endobj
+3 0 obj
+<< /Type /Page /Parent 0 0 R /MediaBox [0 0 595 842] /Contents 2 0 R /Resources << /Font << /F1 1 0 R >> >> >>
+endobj
+4 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+5 0 obj
+<< /Type /Catalog /Pages 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000079 00000 n 
+0000005789 00000 n 
+0000005915 00000 n 
+0000005972 00000 n 
+0000006021 00000 n 
+trailer
+<< /Size 6 /Root 5 0 R >>
+startxref
+6021
+%%EOF
