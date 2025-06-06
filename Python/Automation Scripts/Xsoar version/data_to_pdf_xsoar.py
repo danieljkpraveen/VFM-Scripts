@@ -428,7 +428,8 @@ def main():
         filename = f"rules_{timestamp}.pdf"
         bin_pdf = create_text_pdf(rules, filename)
 
-        file_entry = fileResult(filename, bin_pdf)
+        bin_pdf.seek(0)
+        file_entry = fileResult(filename, bin_pdf.read())
 
         # NOTES:
         # - fileResult - creates a file from data
