@@ -4,10 +4,6 @@ import datetime
 import io
 
 
-import datetime
-import io
-
-
 class MinimalPDF:
     """
     A minimal PDF generator that allows for basic text rendering, page management, 
