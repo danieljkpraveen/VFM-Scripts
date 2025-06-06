@@ -174,7 +174,7 @@ cython_debug/
 .pypirc
 
 
-*.xlsx
+rules*.xlsx
 *.csv
-*.pdf
+rules*.pdf
 *.bak
