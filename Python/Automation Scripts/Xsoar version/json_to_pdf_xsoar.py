@@ -1,6 +1,5 @@
 import json
 import re
-import sys
 import io
 
 
@@ -522,7 +521,13 @@ def process_json_array(array_str, pdf, column_width, label):
 
 def main():
     try:
-        raw_input = sys.stdin.read().strip()
+        args = demisto.args()
+        raw_input = args.get("input_text", "")
+        if not raw_input:
+            raw_input = next(iter(args.values()), "")
+        if isinstance(raw_input, (dict, list)):
+            raw_input = str(raw_input)
+        raw_input = raw_input.replace('\r\n', '\n')
 
         object_pattern = r'Input="({.*})"'
         array_pattern = r'(".*?")\s+value="(\[.*?\])"(?:\s+regex=".*?")?'
@@ -532,7 +537,8 @@ def main():
         array_match = re.search(array_pattern, raw_input)
         regex_extract_match = re.search(regex_extract_pattern, raw_input)
 
-        pdf = MinimalPDF("output.pdf")
+        filename = "output.pdf"
+        pdf = MinimalPDF(filename)
         pdf.set_margin(40)
         pdf.set_font(9)
         pdf.draw_page_border()
@@ -545,31 +551,54 @@ def main():
         if object_match:
             bin_pdf = process_json_object(
                 object_match, pdf, column_width // 2, spacing)
-            if bin_pdf:
-                with open("output.pdf", "wb") as f:
-                    f.write(bin_pdf.read())
-                print("PDF file 'output.pdf' has been created successfully.")
+            bin_pdf.seek(0)
+
+            file_entry = fileResult(filename, bin_pdf.read())
+
+            return_results(file_entry)
+            return_results(CommandResults(
+                outputs_prefix="ExtractedRulesPdf",
+                outputs={
+                    "EntryID": file_entry.get("FileID"),
+                    "Name": filename
+                }
+            ))
         elif array_match:
             label = array_match.group(1).strip('"')
             array_str = array_match.group(2)
             bin_pdf = process_json_array(array_str, pdf, column_width, label)
-            if bin_pdf:
-                with open("output.pdf", "wb") as f:
-                    f.write(bin_pdf.read())
-                print("PDF file 'output.pdf' has been created successfully.")
+            bin_pdf.seek(0)
+
+            file_entry = fileResult(filename, bin_pdf.read())
+
+            return_results(file_entry)
+            return_results(CommandResults(
+                outputs_prefix="ExtractedRulesPdf",
+                outputs={
+                    "EntryID": file_entry.get("FileID"),
+                    "Name": filename
+                }
+            ))
         elif regex_extract_match:
             label = "RegexExtractAll"
             array_str = regex_extract_match.group(1)
             bin_pdf = process_json_array(array_str, pdf, column_width, label)
-            if bin_pdf:
-                with open("output.pdf", "wb") as f:
-                    f.write(bin_pdf.read())
-                print("PDF file 'output.pdf' has been created successfully.")
+            bin_pdf.seek(0)
+
+            file_entry = fileResult(filename, bin_pdf.read())
+
+            return_results(file_entry)
+            return_results(CommandResults(
+                outputs_prefix="ExtractedRulesPdf",
+                outputs={
+                    "EntryID": file_entry.get("FileID"),
+                    "Name": filename
+                }
+            ))
         else:
             print("No valid JSON object or array found in the input string")
     except Exception as e:
         print(f"An error occurred: {e}")
 
 
-if __name__ == "__main__":
-    main()
+main()
