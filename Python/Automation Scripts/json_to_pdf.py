@@ -525,7 +525,8 @@ def main():
         raw_input = sys.stdin.read().strip()
 
         object_pattern = r'Input="({.*})"'
-        array_pattern = r'(".*?")\s+value="(\[.*\])"'
+        # Updated array pattern: match label, value, and (optionally) regex, but only use label and value
+        array_pattern = r'(".*?")\s+value="(\[.*?\])"(?:\s+regex=".*?")?'
 
         object_match = re.search(object_pattern, raw_input)
         array_match = re.search(array_pattern, raw_input)
