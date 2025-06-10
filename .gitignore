@@ -178,3 +178,5 @@ rules*.xlsx
 *.csv
 rules*.pdf
 *.bak
+output.pdf
+example.pdf
