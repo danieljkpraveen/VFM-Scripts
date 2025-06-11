@@ -1,4 +1,4 @@
-import re
+import ast
 import sys
 import io
 
@@ -486,56 +486,34 @@ def read_stdin():
     return sys.stdin.read()
 
 
-def extract_rules(text):
-    """
-    Extract rules and their values from the input.
-    Handles:
-      - "Rules ..." value="[\"...\",\"...\"]"
-      - Rules ... value=["...", "..."]
-      - Rules ... =["...", "..."]
-      - Rules ... - ["...", "..."]
-      - Rules ... - ... (plain text)
-      - Rules ... . ... (plain text)
-    """
-    extracted = []
+def clean_and_parse(value):
+    value = value.strip()
+    if value.startswith('[') and value.endswith(']'):
+        value = value.replace('\\"', '"')
+        try:
+            return ast.literal_eval(value)
+        except Exception:
+            return value
+    return value
 
-    # Pattern for quoted or unquoted task and value
-    pattern_value = r'(?:"([^"]+)"|(\bRules[^\s=:-]+.*?))\s+value\s*=\s*(?:"|\')\[(.*?)\](?:"|\')'
-    # Pattern for unquoted list after = or -
-    pattern_list = r'(Rules.*?)(?:=|-)\s*\[(.*?)\]'
-    # Pattern for single value after dash or period
-    pattern_single = r'(Rules.*?)(?:-|\.)(?!\s*\[)(.*?)(?=(?:Rules|$))'
 
-    # First, extract all rules with quoted or unquoted value=
-    for match in re.finditer(pattern_value, text, re.DOTALL):
-        rule_desc = match.group(1) or match.group(2)
-        values = match.group(3).replace('\\', '')
-        result = ', '.join([v.strip().strip('"').strip("'")
-                           for v in values.split(',')])
-        extracted.append([rule_desc.strip(), result])
-
-    # Remove already matched parts to avoid duplicates
-    text = re.sub(pattern_value, '', text, flags=re.DOTALL)
-
-    # Then, extract all rules with lists (excluding value=)
-    for match in re.finditer(pattern_list, text, re.DOTALL):
-        rule_desc = match.group(1).strip().rstrip('= -').strip()
-        values = match.group(2).replace('\\', '')
-        result = ', '.join([v.strip().strip('"').strip("'")
-                           for v in values.split(',')])
-        extracted.append([rule_desc, result])
-
-    # Remove already matched parts to avoid duplicates
-    text_cleaned = re.sub(pattern_list, '', text, flags=re.DOTALL)
-
-    # Now extract single-value rules (not followed by [ ... ])
-    for match in re.finditer(pattern_single, text_cleaned, re.DOTALL):
-        rule_desc = match.group(1).strip().rstrip('= -').strip()
-        value = match.group(2).strip().strip('.').strip()
-        if value:
-            extracted.append([rule_desc, value])
-
-    return extracted
+def process_inputs(lines):
+    outputs = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        # Split by the first comma
+        if ',' in line:
+            key, val = line.split(',', 1)
+        else:
+            key, val = line, ""
+        value = clean_and_parse(val)
+        # Always convert value to string for the second column
+        if isinstance(value, list):
+            value = ", ".join(str(v) for v in value)
+        outputs.append([key.strip(), str(value)])
+    return outputs
 
 
 def create_text_pdf(data, filename):
@@ -574,11 +552,11 @@ def create_text_pdf(data, filename):
 
 def main():
     try:
-        input_text = read_stdin()
+        input_text = read_stdin().strip().splitlines()
         if not input_text:
             print("No input provided.")
 
-        rules = extract_rules(input_text)
+        rules = process_inputs(input_text)
         if rules:
             pdf_filename = "rules.pdf"
             bin_pdf = create_text_pdf(rules, pdf_filename)
